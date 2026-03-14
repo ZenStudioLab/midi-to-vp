@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { createDefaultVpKeymap } from './keymap.js';
 import { normalizeMidiNotes } from './normalize.js';
 import { parseMidiBuffer } from './parse.js';
@@ -74,9 +73,4 @@ export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionO
       }
     }
   };
-}
-
-export async function convertMidiFileToVp(inputPath: string, options: ConversionOptions = {}): Promise<ConversionResult> {
-  const data = await readFile(inputPath);
-  return convertMidiToVp(data, options);
 }

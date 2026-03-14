@@ -1,5 +1,6 @@
 export { createDefaultVpKeymap } from './keymap.js';
-export { convertMidiFileToVp, convertMidiToVp } from './convert.js';
+export { convertMidiToVp } from './convert.js';
+export { convertMidiFileToVp } from './node.js';
 export { serializeVpTimeline } from './serialize.js';
 
 export type {
