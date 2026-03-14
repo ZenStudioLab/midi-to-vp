@@ -1,0 +1,55 @@
+{
+  "name": "@zen/midi-to-vp",
+  "version": "0.1.0",
+  "private": false,
+  "description": "MIDI to Virtual Piano notation converter for Node.js",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "midi-to-vp": "./dist/cjs/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist coverage",
+    "build:esm": "tsc -p tsconfig.build.esm.json",
+    "build:cjs": "tsc -p tsconfig.build.cjs.json",
+    "build:types": "tsc -p tsconfig.build.types.json",
+    "build:cjs-meta": "mkdir -p dist/cjs && cp package.cjs.json dist/cjs/package.json",
+    "build": "yarn clean && yarn build:esm && yarn build:cjs && yarn build:types && yarn build:cjs-meta",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "midi",
+    "virtual-piano",
+    "notation",
+    "converter"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@tonejs/midi": "^2.0.28"
+  },
+  "devDependencies": {
+    "@types/node": "^24.4.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.0.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
