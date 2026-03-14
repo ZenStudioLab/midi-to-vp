@@ -10,8 +10,19 @@
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
+      "browser": "./dist/esm/browser.js",
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
+    },
+    "./browser": {
+      "types": "./dist/types/browser.d.ts",
+      "import": "./dist/esm/browser.js",
+      "require": "./dist/cjs/browser.js"
+    },
+    "./node": {
+      "types": "./dist/types/node.d.ts",
+      "import": "./dist/esm/node.js",
+      "require": "./dist/cjs/node.js"
     },
     "./package.json": "./package.json"
   },
