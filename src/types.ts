@@ -1,4 +1,4 @@
-export type VpNotationMode = 'extended' | 'zen';
+export type VpNotationMode = 'extended' | 'standard' | 'zen';
 
 export type TempoSegment = {
   ticks: number;

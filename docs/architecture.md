@@ -15,6 +15,9 @@ For detailed architectural decisions, see [`docs/adr/`](./adr/):
 - [ADR 0002: Browser-Safe and Node.js Code Separation](./adr/0002-browser-node-split.md)
 - [ADR 0003: Five-Stage Conversion Pipeline](./adr/0003-conversion-pipeline-architecture.md)
 - [ADR 0004: Choice of @tonejs/midi Parser](./adr/0004-tonejs-midi-parser.md)
+- [ADR 0005: Quantization and Timeline Algorithm](./adr/0005-quantization-and-timeline-algorithm.md)
+- [ADR 0006: Default Keymap Design](./adr/0006-default-keymap-design.md)
+- [ADR 0007: CLI Architecture and Output Contract](./adr/0007-cli-architecture.md)
 
 ### Design Principles
 
@@ -41,9 +44,10 @@ MIDI Binary → Parse → Normalize → Transform → Quantize → Serialize →
 |--------|------|----------------|
 | **Parse** | `parse.ts` | Extract tempo, tracks, notes from MIDI binary using [@tonejs/midi](./adr/0004-tonejs-midi-parser.md) |
 | **Normalize** | `normalize.ts` | Convert to `NoteEvent[]` with absolute time (seconds) |
-| **Transform** | `transform.ts` | Auto-transpose, filter percussion, dedupe |
-| **Quantize** | `quantize.ts` | Snap to grid, build `TimelineSlot[]`, simplify chords |
+| **Transform** | `transform.ts` | Auto-transpose, filter percussion, dedupe with [default keymap constraints](./adr/0006-default-keymap-design.md) |
+| **Quantize** | `quantize.ts` | Snap to grid, build `TimelineSlot[]`, simplify chords per [ADR 0005](./adr/0005-quantization-and-timeline-algorithm.md) |
 | **Serialize** | `serialize.ts` | Format to Extended (`C4 D4`) or Zen (`a s`) notation |
+| **CLI** | `cli.ts` | Parse options, validate inputs, and write outputs via [ADR 0007](./adr/0007-cli-architecture.md) |
 
 **Orchestration**: `convert.ts` chains modules, returns `ConversionResult` with intermediate outputs for debugging.
 
@@ -63,7 +67,13 @@ QuantizedNoteEvent[] → TimelineSlot[] → string (notation)
 
 **Notation Modes**:
 - **Extended**: `C4 D4 [C4 E4 G4]` (88-key piano range)
-- **Zen**: `a s [asf]` (36-key compact, 3 octaves)
+- **Standard / Zen**: `a s [asf]` (36-key compact, 3 octaves; `standard` is alias of `zen`)
+
+**Player Difficulty Profiles** (documentation-level contract):
+- **easy**: standard UX label (maps to API `zen`), lower quantization/chord density
+- **medium**: standard UX label (maps to API `zen`), balanced readability/detail
+- **hard**: extended notation, standard quantization
+- **hardcore**: extended notation, high resolution and reduced simplification
 
 ## Performance
 

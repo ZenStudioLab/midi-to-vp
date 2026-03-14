@@ -58,15 +58,41 @@ export async function convertMidiFileToVp(path: string, options?) {
 // index.ts (main export)
 export { convertMidiToVp } from './convert.js';
 export { convertMidiFileToVp } from './node.js';
+
+// browser.ts (browser-safe export surface)
+export { convertMidiToVp } from './convert.js';
+```
+
+**Package Exports Conditions**:
+```json
+{
+  "exports": {
+    ".": {
+      "browser": "./dist/esm/browser.js",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./browser": {
+      "import": "./dist/esm/browser.js",
+      "require": "./dist/cjs/browser.js"
+    },
+    "./node": {
+      "import": "./dist/esm/node.js",
+      "require": "./dist/cjs/node.js"
+    }
+  }
+}
 ```
 
 **Usage**:
 ```typescript
 // Browser code (test server)
 import { convertMidiToVp } from '@zen/midi-to-vp';  // ✅ Works
+import { convertMidiToVp as browserConvert } from '@zen/midi-to-vp/browser';  // ✅ Explicit browser entry
 
 // Node.js code (CLI, server)
 import { convertMidiFileToVp } from '@zen/midi-to-vp';  // ✅ Works
+import { convertMidiFileToVp as nodeConvert } from '@zen/midi-to-vp/node';    // ✅ Explicit Node entry
 ```
 
 ## Consequences
@@ -76,11 +102,11 @@ import { convertMidiFileToVp } from '@zen/midi-to-vp';  // ✅ Works
 - **Clear separation**: API boundary between browser/Node.js is explicit
 - **No Vite config hacks**: No need for `externals` or polyfills
 - **Type safety maintained**: Both functions fully typed
-- **Minimal changes**: Only moved one function
+- **Explicit compatibility**: Browser-aware export conditions prevent accidental Node import in client bundles
 
 ### Negative
 - **Extra file**: One more file in source tree
-- **Export complexity**: Two separate export statements
+- **Export complexity**: Requires maintaining index + browser entry + conditional exports
 - **Documentation split**: Need to document browser vs Node.js usage
 
 ### Neutral
@@ -136,6 +162,8 @@ export async function convertMidiFileToVp(path: string) {
 - `src/convert.ts`: Removed `readFile` import and `convertMidiFileToVp`
 - `src/node.ts`: Created with `convertMidiFileToVp`
 - `src/index.ts`: Updated to export from both files
+- `src/browser.ts`: Added browser-only export surface
+- `package.json`: Added browser conditional export and explicit `./browser` / `./node` entries
 - `src/cli.ts`: Changed import from `./convert.js` to `./node.js`
 
 **Testing**:

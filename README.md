@@ -5,6 +5,7 @@
 ## Features
 
 - 🎹 **Dual Notation Modes**: Extended (full range) and Zen (compact) notation formats
+- 🧭 **Player Difficulty Profiles**: Recommended output presets for `easy`, `medium`, `hard`, and `hardcore`
 - 🎼 **Smart Conversion**: Automatic transpose, quantization, and chord simplification
 - 📦 **Dual Format**: ESM + CJS with full TypeScript definitions
 - ⚡ **Performance**: Built with `@tonejs/midi` for reliable MIDI parsing
@@ -43,6 +44,7 @@ midi-to-vp input.mid --mode zen --slots-per-quarter 8
 
 ```typescript
 import { convertMidiFileToVp, convertMidiToVp } from '@zen/midi-to-vp';
+import { convertMidiToVp as convertMidiToVpBrowser } from '@zen/midi-to-vp/browser';
 
 // Convert from file path
 const result = await convertMidiFileToVp('song.mid', {
@@ -59,6 +61,9 @@ console.log(`Total slots: ${result.metadata.totalSlots}`);
 // Convert from buffer
 const buffer = await readFile('song.mid');
 const result2 = convertMidiToVp(buffer, { notationMode: 'zen' });
+
+// Browser-safe import (no Node.js fs dependency)
+const browserResult = convertMidiToVpBrowser(buffer, { notationMode: 'zen' });
 ```
 
 ## API Reference
@@ -87,7 +92,8 @@ Converts MIDI binary data to Virtual Piano notation.
 
 ```typescript
 {
-  notationMode?: 'extended' | 'zen';        // Default: 'extended'
+  notationMode?: 'extended' | 'standard' | 'zen'; // Default: 'extended'
+  // `standard` and `zen` both select compact notation output
   quantization?: {
     slotsPerQuarter?: number;               // Default: 4
   };
@@ -143,7 +149,7 @@ midi-to-vp <input.mid> [options]
 |--------|-------------|---------|
 | `--out <path>` | JSON output path | `<input>.vp.json` |
 | `--notation-out <path>` | Notation text output path | - |
-| `--mode <extended\|zen>` | Notation mode | `extended` |
+| `--mode <extended\|standard\|zen>` | Notation mode | `extended` |
 | `--slots-per-quarter <n>` | Quantization resolution | `4` |
 | `--max-chord-size <n>` | Max notes per chord | `4` |
 | `--include-percussion` | Keep MIDI channel 10 | `false` |
@@ -181,6 +187,24 @@ Compact alphanumeric representation (36-key range):
 ```
 a s d | f g h | [asf]
 ```
+
+## Player Difficulty Profiles
+
+`@zen/midi-to-vp` exposes `notationMode: 'extended' | 'standard' | 'zen'` in code.
+For player-facing UX documentation, use:
+- `extended`: full-range notation
+- `standard`: compact notation (alias of API `zen`)
+
+Recommended profile presets:
+
+| Level | UX Notation Label | API `notationMode` | `slotsPerQuarter` | `simplifyChords` | `maxChordSize` | `dedupe` |
+|------|--------------------|--------------------|-------------------|------------------|----------------|----------|
+| `easy` | `standard` | `zen` | `2` | `true` | `2` | `true` |
+| `medium` | `standard` | `zen` | `4` | `true` | `3` | `true` |
+| `hard` | `extended` | `extended` | `4` | `true` | `4` | `true` |
+| `hardcore` | `extended` | `extended` | `8` | `false` | `6` | `false` |
+
+These are documentation-level presets for product consistency; callers can still override any conversion option directly.
 
 ## Development
 

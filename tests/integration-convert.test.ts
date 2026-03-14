@@ -23,4 +23,12 @@ describe('integration: conversion pipeline', () => {
     expect(extended.metadata.totalSlots).toBe(zen.metadata.totalSlots);
     expect(extended.timeline.length).toBe(zen.timeline.length);
   });
+
+  it('supports standard mode as an alias of compact notation output', () => {
+    const standardResult = convertMidiToVp(createMidiFixture(), { notationMode: 'standard' as never });
+    const compactResult = convertMidiToVp(createMidiFixture(), { notationMode: 'zen' });
+
+    expect(standardResult.notation.selected).toBe(compactResult.notation.zen);
+    expect(standardResult.notation.mode).toBe('standard');
+  });
 });

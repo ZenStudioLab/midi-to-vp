@@ -35,4 +35,30 @@ describe('integration: cli', () => {
     expect(parsed.notation.extended).toBe('[tu]y--d');
     expect(notationText.trim()).toBe('[tu]y--d');
   });
+
+  it('accepts standard mode as alias for compact notation', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'midi-to-vp-'));
+    const midiPath = path.join(tempDir, 'input.mid');
+    const jsonPath = path.join(tempDir, 'output-standard.json');
+
+    await writeFile(midiPath, createMidiFixture());
+
+    const exitCode = await runCli([
+      midiPath,
+      '--out',
+      jsonPath,
+      '--mode',
+      'standard',
+      '--slots-per-quarter',
+      '4'
+    ]);
+
+    expect(exitCode).toBe(0);
+
+    const jsonText = await readFile(jsonPath, 'utf8');
+    const parsed = JSON.parse(jsonText) as { notation: { mode: string; selected: string; zen: string } };
+
+    expect(parsed.notation.mode).toBe('standard');
+    expect(parsed.notation.selected).toBe(parsed.notation.zen);
+  });
 });

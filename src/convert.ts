@@ -12,6 +12,7 @@ const DEFAULT_MAX_CHORD_SIZE = 4;
 export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionOptions = {}): ConversionResult {
   const keymap = options.keymap ?? createDefaultVpKeymap();
   const notationMode = options.notationMode ?? 'extended';
+  const isCompactMode = notationMode === 'zen' || notationMode === 'standard';
   const slotsPerQuarter = options.quantization?.slotsPerQuarter ?? DEFAULT_SLOTS_PER_QUARTER;
   const includePercussion = options.includePercussion ?? false;
   const dedupe = options.dedupe ?? true;
@@ -57,7 +58,7 @@ export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionO
     notation: {
       extended: notationExtended,
       zen: notationZen,
-      selected: notationMode === 'zen' ? notationZen : notationExtended,
+      selected: isCompactMode ? notationZen : notationExtended,
       mode: notationMode
     },
     tempoSegments: parsed.tempoSegments,
