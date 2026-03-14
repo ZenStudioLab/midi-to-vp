@@ -123,7 +123,7 @@ Converts MIDI binary data to Virtual Piano notation.
     extended: string;                       // Extended notation
     zen: string;                            // Zen notation
     selected: string;                       // Based on mode
-    mode: 'extended' | 'zen';
+    mode: 'extended' | 'standard' | 'zen';
   };
   tempoSegments: TempoSegment[];            // Tempo map
   metadata: {
