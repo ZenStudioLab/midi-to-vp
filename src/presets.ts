@@ -1,28 +1,35 @@
 import type { ConversionOptions, DifficultyLevel } from './types.js';
 
 const DIFFICULTY_PRESETS: Record<DifficultyLevel, ConversionOptions> = {
-  easy: {
-    notationMode: 'zen',
+  Novice: {
+    notationMode: 'minimal',
     quantization: { slotsPerQuarter: 2 },
     simplifyChords: true,
     maxChordSize: 2,
     dedupe: true
   },
-  medium: {
-    notationMode: 'zen',
+  Apprentice: {
+    notationMode: 'minimal',
     quantization: { slotsPerQuarter: 4 },
     simplifyChords: true,
     maxChordSize: 3,
     dedupe: true
   },
-  hard: {
-    notationMode: 'extended',
+  Adept: {
+    notationMode: 'standard',
     quantization: { slotsPerQuarter: 4 },
     simplifyChords: true,
     maxChordSize: 4,
     dedupe: true
   },
-  hardcore: {
+  Master: {
+    notationMode: 'extended',
+    quantization: { slotsPerQuarter: 8 },
+    simplifyChords: false,
+    maxChordSize: 5,
+    dedupe: true
+  },
+  Guru: {
     notationMode: 'extended',
     quantization: { slotsPerQuarter: 8 },
     simplifyChords: false,

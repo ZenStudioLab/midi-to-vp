@@ -56,9 +56,9 @@ describe('integration: cli', () => {
     expect(exitCode).toBe(0);
 
     const jsonText = await readFile(jsonPath, 'utf8');
-    const parsed = JSON.parse(jsonText) as { notation: { mode: string; selected: string; zen: string } };
+    const parsed = JSON.parse(jsonText) as { notation: { mode: string; selected: string; standard: string } };
 
     expect(parsed.notation.mode).toBe('standard');
-    expect(parsed.notation.selected).toBe(parsed.notation.zen);
+    expect(parsed.notation.selected).toBe(parsed.notation.standard);
   });
 });

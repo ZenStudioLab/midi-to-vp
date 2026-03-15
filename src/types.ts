@@ -1,5 +1,5 @@
-export type VpNotationMode = 'extended' | 'standard' | 'zen';
-export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'hardcore';
+export type VpNotationMode = 'extended' | 'standard' | 'minimal';
+export type DifficultyLevel = 'Novice' | 'Apprentice' | 'Adept' | 'Master' | 'Guru';
 
 export type TempoSegment = {
   ticks: number;
@@ -65,7 +65,8 @@ export type ConversionResult = {
   warnings: string[];
   notation: {
     extended: string;
-    zen: string;
+    standard: string;
+    minimal: string;
     selected: string;
     mode: VpNotationMode;
   };
@@ -92,4 +93,14 @@ export type ParsedMidiData = {
 export type SerializeOptions = {
   mode: VpNotationMode;
   format?: FormattingOptions | null;
+};
+
+export type AnalysisResult = {
+  noteDensity: number;
+  chordComplexity: number;
+  rhythmicComplexity: number;
+  rangeScore: number;
+  overallScore: number;
+  recommendedLevel: DifficultyLevel;
+  confidence: number;
 };

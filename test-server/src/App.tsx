@@ -21,10 +21,11 @@ import {
   Tabs,
   TextField,
   Typography,
+  LinearProgress,
   styled
 } from '@mui/material';
-import { convertMidiToVp, getDifficultyPreset } from '@zen/midi-to-vp';
-import type { ConversionResult, DifficultyLevel, VpNotationMode } from '@zen/midi-to-vp';
+import { analyzeVpNotation, convertMidiToVp, getDifficultyPreset } from '@zen/midi-to-vp';
+import type { AnalysisResult, ConversionResult, DifficultyLevel, VpNotationMode } from '@zen/midi-to-vp';
 import { useState } from 'react';
 
 const VisuallyHiddenInput = styled('input')({
@@ -66,9 +67,11 @@ function App() {
   const [result, setResult] = useState<ConversionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [tabValue, setTabValue] = useState(0);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
 
-  const [difficultyLevel, setDifficultyLevel] = useState<DifficultyLevel>('hard');
+  const [difficultyLevel, setDifficultyLevel] = useState<DifficultyLevel>('Adept');
 
   // Conversion options
   const [notationMode, setNotationMode] = useState<VpNotationMode>('extended');
@@ -88,11 +91,33 @@ function App() {
     setMaxChordSize(preset.maxChordSize ?? 4);
   };
 
+  const analyzeSelectedFile = async (selectedFile: File) => {
+    setAnalyzing(true);
+    try {
+      const buffer = await selectedFile.arrayBuffer();
+      const uint8Array = new Uint8Array(buffer);
+      const preview = convertMidiToVp(uint8Array, {
+        notationMode: 'standard',
+        quantization: { slotsPerQuarter: 4 }
+      });
+      const nextAnalysis = analyzeVpNotation(preview.notation.selected);
+      setAnalysis(nextAnalysis);
+      applyDifficultyPreset(nextAnalysis.recommendedLevel);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Analysis failed');
+      setAnalysis(null);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
       setError(null);
+      setResult(null);
+      void analyzeSelectedFile(selectedFile);
     }
   };
 
@@ -119,6 +144,7 @@ function App() {
         maxChordSize,
       });
 
+      setAnalysis(analyzeVpNotation(conversionResult.notation.selected));
       setResult(conversionResult);
       setTabValue(0);
     } catch (err) {
@@ -137,7 +163,7 @@ function App() {
             MIDI to Virtual Piano Converter
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            Convert MIDI files to Virtual Piano notation (Extended, Standard, and Zen modes)
+            Convert MIDI files to Virtual Piano notation (Minimal, Standard, and Extended modes)
           </Typography>
         </Box>
 
@@ -190,10 +216,11 @@ function App() {
                       label="Difficulty Profile"
                       onChange={(e) => applyDifficultyPreset(e.target.value as DifficultyLevel)}
                     >
-                      <MenuItem value="easy">Easy</MenuItem>
-                      <MenuItem value="medium">Medium</MenuItem>
-                      <MenuItem value="hard">Hard</MenuItem>
-                      <MenuItem value="hardcore">Hardcore</MenuItem>
+                      <MenuItem value="Novice">Novice</MenuItem>
+                      <MenuItem value="Apprentice">Apprentice</MenuItem>
+                      <MenuItem value="Adept">Adept</MenuItem>
+                      <MenuItem value="Master">Master</MenuItem>
+                      <MenuItem value="Guru">Guru</MenuItem>
                     </Select>
                   </FormControl>
 
@@ -205,9 +232,9 @@ function App() {
                       label="Notation Mode"
                       onChange={(e) => setNotationMode(e.target.value as VpNotationMode)}
                     >
+                      <MenuItem value="minimal">Minimal (36-Key)</MenuItem>
                       <MenuItem value="extended">Extended (Full Range)</MenuItem>
                       <MenuItem value="standard">Standard (Compact)</MenuItem>
-                      <MenuItem value="zen">Zen (36-Key Compact)</MenuItem>
                     </Select>
                   </FormControl>
 
@@ -267,6 +294,61 @@ function App() {
             </CardContent>
           </Card>
 
+          {(analyzing || analysis) && (
+            <Card elevation={3} data-testid="analysis-panel">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Analysis
+                </Typography>
+                {analyzing && <LinearProgress />}
+                {analysis && (
+                  <Stack spacing={2}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Recommended Profile
+                      </Typography>
+                      <Typography variant="h6" data-testid="analysis-recommended-level">
+                        {analysis.recommendedLevel}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Overall Score
+                      </Typography>
+                      <Typography variant="h6" data-testid="analysis-overall-score">
+                        {analysis.overallScore}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Note Density ({analysis.noteDensity})
+                      </Typography>
+                      <LinearProgress variant="determinate" value={analysis.noteDensity} />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Chord Complexity ({analysis.chordComplexity})
+                      </Typography>
+                      <LinearProgress variant="determinate" value={analysis.chordComplexity} />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Rhythmic Complexity ({analysis.rhythmicComplexity})
+                      </Typography>
+                      <LinearProgress variant="determinate" value={analysis.rhythmicComplexity} />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Range Score ({analysis.rangeScore})
+                      </Typography>
+                      <LinearProgress variant="determinate" value={analysis.rangeScore} />
+                    </Box>
+                  </Stack>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Convert Button */}
           <Button
             variant="contained"
@@ -312,6 +394,14 @@ function App() {
                     <div>
                       <strong>Source Tracks:</strong> {result.metadata.sourceTrackCount}
                     </div>
+                    <div data-testid="result-profile-level">
+                      <strong>Profile:</strong> {difficultyLevel}
+                    </div>
+                    {analysis && (
+                      <div>
+                        <strong>Recommended:</strong> {analysis.recommendedLevel} ({analysis.confidence}% confidence)
+                      </div>
+                    )}
                   </Box>
                 </Paper>
 
@@ -350,10 +440,18 @@ function App() {
                     </Box>
                     <Box>
                       <Typography variant="subtitle2" gutterBottom>
-                        Zen Notation
+                        Standard Notation
                       </Typography>
                       <Paper variant="outlined" className="p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
-                        {result.notation.zen}
+                        {result.notation.standard}
+                      </Paper>
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Minimal Notation
+                      </Typography>
+                      <Paper variant="outlined" className="p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+                        {result.notation.minimal}
                       </Paper>
                     </Box>
                   </Stack>
@@ -398,15 +496,15 @@ function App() {
                   <Button
                     variant="outlined"
                     onClick={() => {
-                      const blob = new Blob([result.notation.zen], { type: 'text/plain' });
+                      const blob = new Blob([result.notation.standard], { type: 'text/plain' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = 'notation-zen.txt';
+                      a.download = 'notation-standard.txt';
                       a.click();
                     }}
                   >
-                    Download Zen Notation
+                    Download Standard Notation
                   </Button>
                   <Button
                     variant="outlined"

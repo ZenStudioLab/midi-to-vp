@@ -10,7 +10,7 @@ describe('integration: conversion pipeline', () => {
     });
 
     expect(result.notation.extended).toBe('[tu]y--d');
-    expect(result.notation.zen).toBe('[tu]yd');
+    expect(result.notation.standard).toBe('[tu]yd');
     expect(result.notation.selected).toBe('[tu]y--d');
     expect(result.timeline.length).toBe(5);
     expect(result.warnings).toEqual([]);
@@ -18,10 +18,10 @@ describe('integration: conversion pipeline', () => {
 
   it('keeps slot parity across notation modes', () => {
     const extended = convertMidiToVp(createMidiFixture(), { notationMode: 'extended' });
-    const zen = convertMidiToVp(createMidiFixture(), { notationMode: 'zen' });
+    const minimal = convertMidiToVp(createMidiFixture(), { notationMode: 'minimal' });
 
-    expect(extended.metadata.totalSlots).toBe(zen.metadata.totalSlots);
-    expect(extended.timeline.length).toBe(zen.timeline.length);
+    expect(extended.metadata.totalSlots).toBe(minimal.metadata.totalSlots);
+    expect(extended.timeline.length).toBe(minimal.timeline.length);
   });
 
   it('serializes standard mode without dash placeholders for empty slots', () => {

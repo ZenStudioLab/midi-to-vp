@@ -13,7 +13,6 @@ const DEFAULT_MAX_CHORD_SIZE = 4;
 export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionOptions = {}): ConversionResult {
   const keymap = options.keymap ?? createDefaultVpKeymap();
   const notationMode = options.notationMode ?? 'extended';
-  const isCompactMode = notationMode === 'zen' || notationMode === 'standard';
   const slotsPerQuarter = options.quantization?.slotsPerQuarter ?? DEFAULT_SLOTS_PER_QUARTER;
   const includePercussion = options.includePercussion ?? false;
   const dedupe = options.dedupe ?? true;
@@ -42,8 +41,13 @@ export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionO
     format: options.format
   });
 
-  const notationZen = serializeVpTimeline(timeline, {
-    mode: 'zen',
+  const notationStandard = serializeVpTimeline(timeline, {
+    mode: 'standard',
+    format: options.format
+  });
+
+  const notationMinimal = serializeVpTimeline(timeline, {
+    mode: 'minimal',
     format: options.format
   });
 
@@ -58,8 +62,14 @@ export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionO
     warnings,
     notation: {
       extended: notationExtended,
-      zen: notationZen,
-      selected: isCompactMode ? notationZen : notationExtended,
+      standard: notationStandard,
+      minimal: notationMinimal,
+      selected:
+        notationMode === 'minimal'
+          ? notationMinimal
+          : notationMode === 'standard'
+            ? notationStandard
+            : notationExtended,
       mode: notationMode
     },
     tempoSegments: parsed.tempoSegments,
@@ -82,6 +92,14 @@ export function convertMidiWithDifficulty(
   level: DifficultyLevel,
   overrides: ConversionOptions = {}
 ): ConversionResult {
+  return convertMidiWithLevel(input, { level, ...overrides });
+}
+
+export function convertMidiWithLevel(
+  input: Uint8Array | Buffer,
+  options: { level: DifficultyLevel } & Partial<ConversionOptions>
+): ConversionResult {
+  const { level, ...overrides } = options;
   const preset = getDifficultyPreset(level);
   const mergedOptions: ConversionOptions = {
     ...preset,

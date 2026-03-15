@@ -26,7 +26,7 @@ function printHelp(): void {
 Options:
   --out <path>               JSON output path
   --notation-out <path>      Notation text output path
-  --mode <extended|standard|zen> Selected notation mode (default: extended)
+  --mode <extended|standard|minimal> Selected notation mode (default: extended)
   --slots-per-quarter <n>    Quantization resolution (default: 4)
   --max-chord-size <n>       Max notes to keep per chord (default: 4)
   --include-percussion       Keep MIDI channel 10 notes
@@ -82,7 +82,7 @@ function parseArgs(argv: string[]): CliOptions {
         break;
       case '--mode': {
         const mode = argv[index + 1] as VpNotationMode;
-        if (mode !== 'extended' && mode !== 'standard' && mode !== 'zen') {
+        if (mode !== 'extended' && mode !== 'standard' && mode !== 'minimal') {
           throw new Error(`Unsupported mode: ${mode}`);
         }
         options.mode = mode;

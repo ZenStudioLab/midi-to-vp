@@ -66,16 +66,21 @@ QuantizedNoteEvent[] → TimelineSlot[] → string (notation)
 - `ConversionResult`: Full output with intermediate arrays, notation, metadata, warnings
 
 **Notation Modes**:
-- **Extended**: `C4 D4 [C4 E4 G4]` (88-key piano range)
-- **Standard / Zen**: `a s [asf]` (36-key compact, 3 octaves; `standard` is alias of `zen`)
+- **Minimal**: `a b c [abc]` (36-key compact notation)
+- **Standard**: VP key output without dash placeholders
+- **Extended**: Standard output plus `-` for empty timeline slots
 
 **Player Difficulty Profiles** (built-in API contract):
-- **easy**: standard UX label (maps to API `zen`), lower quantization/chord density
-- **medium**: standard UX label (maps to API `zen`), balanced readability/detail
-- **hard**: extended notation, standard quantization
-- **hardcore**: extended notation, high resolution and reduced simplification
+- **Novice**: minimal notation, lowest density
+- **Apprentice**: minimal notation, balanced beginner profile
+- **Adept**: standard notation
+- **Master**: extended notation, higher rhythmic resolution
+- **Guru**: extended notation, maximum fidelity
 
-Profiles are exposed via `getDifficultyPreset(level)` and `convertMidiWithDifficulty(input, level, overrides?)`.
+Profiles are exposed via `getDifficultyPreset(level)` and `convertMidiWithLevel(input, { level, ...overrides })`.
+
+**Analysis Service**:
+- `analyzeVpNotation(notation)` computes `noteDensity`, `chordComplexity`, `rhythmicComplexity`, `rangeScore`, `overallScore`, `recommendedLevel`, and `confidence`.
 
 ## Performance
 

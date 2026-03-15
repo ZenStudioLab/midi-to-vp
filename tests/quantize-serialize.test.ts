@@ -16,13 +16,13 @@ describe('quantize + serialize', () => {
 
   it('serializes compact mode without dash or rest placeholders', () => {
     const result = convertMidiToVp(createSustainMidi(), {
-      notationMode: 'zen',
+      notationMode: 'standard',
       quantization: { slotsPerQuarter: 4 }
     });
 
-    expect(result.notation.zen).not.toContain('-');
-    expect(result.notation.zen).not.toContain('|');
-    expect(result.notation.zen).toBe('ty');
+    expect(result.notation.standard).not.toContain('-');
+    expect(result.notation.standard).not.toContain('|');
+    expect(result.notation.standard).toBe('ty');
   });
 
   it('simplifies overly dense chords while keeping bass and melody anchors', () => {
