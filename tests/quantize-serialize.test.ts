@@ -14,15 +14,15 @@ describe('quantize + serialize', () => {
     expect(result.notation.extended).toBe('[tu]y--d');
   });
 
-  it('serializes zen mode with sustain and pauses compatible with sheet parser expectations', () => {
+  it('serializes compact mode without dash or rest placeholders', () => {
     const result = convertMidiToVp(createSustainMidi(), {
       notationMode: 'zen',
       quantization: { slotsPerQuarter: 4 }
     });
 
-    expect(result.notation.zen).toContain('-');
-    expect(result.notation.zen).toContain('|');
-    expect(result.notation.zen).toBe('t--|y');
+    expect(result.notation.zen).not.toContain('-');
+    expect(result.notation.zen).not.toContain('|');
+    expect(result.notation.zen).toBe('ty');
   });
 
   it('simplifies overly dense chords while keeping bass and melody anchors', () => {

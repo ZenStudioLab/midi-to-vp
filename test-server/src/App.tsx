@@ -23,8 +23,8 @@ import {
   Typography,
   styled
 } from '@mui/material';
-import type { ConversionResult } from '@zen/midi-to-vp';
-import { convertMidiToVp } from '@zen/midi-to-vp';
+import { convertMidiToVp, getDifficultyPreset } from '@zen/midi-to-vp';
+import type { ConversionResult, DifficultyLevel, VpNotationMode } from '@zen/midi-to-vp';
 import { useState } from 'react';
 
 const VisuallyHiddenInput = styled('input')({
@@ -68,13 +68,25 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
 
+  const [difficultyLevel, setDifficultyLevel] = useState<DifficultyLevel>('hard');
+
   // Conversion options
-  const [notationMode, setNotationMode] = useState<'extended' | 'zen'>('extended');
+  const [notationMode, setNotationMode] = useState<VpNotationMode>('extended');
   const [slotsPerQuarter, setSlotsPerQuarter] = useState(4);
   const [includePercussion, setIncludePercussion] = useState(false);
   const [dedupe, setDedupe] = useState(true);
   const [simplifyChords, setSimplifyChords] = useState(true);
   const [maxChordSize, setMaxChordSize] = useState(4);
+
+  const applyDifficultyPreset = (level: DifficultyLevel) => {
+    const preset = getDifficultyPreset(level);
+    setDifficultyLevel(level);
+    setNotationMode(preset.notationMode ?? 'extended');
+    setSlotsPerQuarter(preset.quantization?.slotsPerQuarter ?? 4);
+    setDedupe(preset.dedupe ?? true);
+    setSimplifyChords(preset.simplifyChords ?? true);
+    setMaxChordSize(preset.maxChordSize ?? 4);
+  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -125,7 +137,7 @@ function App() {
             MIDI to Virtual Piano Converter
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            Convert MIDI files to Virtual Piano notation (Extended & Zen modes)
+            Convert MIDI files to Virtual Piano notation (Extended, Standard, and Zen modes)
           </Typography>
         </Box>
 
@@ -147,6 +159,7 @@ function App() {
                   <VisuallyHiddenInput
                     type="file"
                     accept=".mid,.midi"
+                    data-testid="midi-file-input"
                     onChange={handleFileChange}
                   />
                 </Button>
@@ -170,13 +183,30 @@ function App() {
               <Stack spacing={3}>
                 <Box className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormControl fullWidth>
+                    <InputLabel>Difficulty Profile</InputLabel>
+                    <Select
+                      data-testid="difficulty-level-select"
+                      value={difficultyLevel}
+                      label="Difficulty Profile"
+                      onChange={(e) => applyDifficultyPreset(e.target.value as DifficultyLevel)}
+                    >
+                      <MenuItem value="easy">Easy</MenuItem>
+                      <MenuItem value="medium">Medium</MenuItem>
+                      <MenuItem value="hard">Hard</MenuItem>
+                      <MenuItem value="hardcore">Hardcore</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth>
                     <InputLabel>Notation Mode</InputLabel>
                     <Select
+                      data-testid="notation-mode-select"
                       value={notationMode}
                       label="Notation Mode"
-                      onChange={(e) => setNotationMode(e.target.value as 'extended' | 'zen')}
+                      onChange={(e) => setNotationMode(e.target.value as VpNotationMode)}
                     >
                       <MenuItem value="extended">Extended (Full Range)</MenuItem>
+                      <MenuItem value="standard">Standard (Compact)</MenuItem>
                       <MenuItem value="zen">Zen (36-Key Compact)</MenuItem>
                     </Select>
                   </FormControl>
@@ -186,7 +216,7 @@ function App() {
                     label="Slots Per Quarter Note"
                     value={slotsPerQuarter}
                     onChange={(e) => setSlotsPerQuarter(Number(e.target.value))}
-                    inputProps={{ min: 1, max: 16 }}
+                    inputProps={{ min: 1, max: 16, 'data-testid': 'slots-per-quarter-input' }}
                     fullWidth
                   />
 
@@ -195,7 +225,7 @@ function App() {
                     label="Max Chord Size"
                     value={maxChordSize}
                     onChange={(e) => setMaxChordSize(Number(e.target.value))}
-                    inputProps={{ min: 1, max: 10 }}
+                    inputProps={{ min: 1, max: 10, 'data-testid': 'max-chord-size-input' }}
                     fullWidth
                   />
                 </Box>
@@ -215,8 +245,10 @@ function App() {
                   <FormControlLabel
                     control={
                       <Switch
+                        data-testid="dedupe-switch"
                         checked={dedupe}
                         onChange={(e) => setDedupe(e.target.checked)}
+                        inputProps={{ 'data-testid': 'dedupe-switch-input' }}
                       />
                     }
                     label="Dedupe Notes"
@@ -239,8 +271,9 @@ function App() {
           <Button
             variant="contained"
             size="large"
+            data-testid="convert-button"
             onClick={handleConvert}
-            disabled={!file || loading}
+            disabled={loading}
             className="py-3"
           >
             {loading ? 'Converting...' : 'Convert to Virtual Piano Notation'}
@@ -248,14 +281,14 @@ function App() {
 
           {/* Error Display */}
           {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
+            <Alert data-testid="conversion-error" severity="error" onClose={() => setError(null)}>
               {error}
             </Alert>
           )}
 
           {/* Results Section */}
           {result && (
-            <Card elevation={3}>
+            <Card elevation={3} data-testid="conversion-results">
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   3. Conversion Results
@@ -270,7 +303,7 @@ function App() {
                     <div>
                       <strong>Tempo:</strong> {result.metadata.tempoBpm} BPM
                     </div>
-                    <div>
+                    <div data-testid="metadata-total-slots">
                       <strong>Total Slots:</strong> {result.metadata.totalSlots}
                     </div>
                     <div>

@@ -1,10 +1,11 @@
 import { createDefaultVpKeymap } from './keymap.js';
 import { normalizeMidiNotes } from './normalize.js';
 import { parseMidiBuffer } from './parse.js';
+import { getDifficultyPreset } from './presets.js';
 import { buildTimeline, quantizeNotes } from './quantize.js';
 import { serializeVpTimeline } from './serialize.js';
 import { transformNotesToVpRange } from './transform.js';
-import type { ConversionOptions, ConversionResult } from './types.js';
+import type { ConversionOptions, ConversionResult, DifficultyLevel } from './types.js';
 
 const DEFAULT_SLOTS_PER_QUARTER = 4;
 const DEFAULT_MAX_CHORD_SIZE = 4;
@@ -74,4 +75,22 @@ export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionO
       }
     }
   };
+}
+
+export function convertMidiWithDifficulty(
+  input: Uint8Array | Buffer,
+  level: DifficultyLevel,
+  overrides: ConversionOptions = {}
+): ConversionResult {
+  const preset = getDifficultyPreset(level);
+  const mergedOptions: ConversionOptions = {
+    ...preset,
+    ...overrides,
+    quantization: {
+      ...(preset.quantization ?? {}),
+      ...(overrides.quantization ?? {})
+    }
+  };
+
+  return convertMidiToVp(input, mergedOptions);
 }

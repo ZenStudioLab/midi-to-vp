@@ -10,7 +10,7 @@ describe('integration: conversion pipeline', () => {
     });
 
     expect(result.notation.extended).toBe('[tu]y--d');
-    expect(result.notation.zen).toBe('[tu]y||d');
+    expect(result.notation.zen).toBe('[tu]yd');
     expect(result.notation.selected).toBe('[tu]y--d');
     expect(result.timeline.length).toBe(5);
     expect(result.warnings).toEqual([]);
@@ -24,11 +24,12 @@ describe('integration: conversion pipeline', () => {
     expect(extended.timeline.length).toBe(zen.timeline.length);
   });
 
-  it('supports standard mode as an alias of compact notation output', () => {
+  it('serializes standard mode without dash placeholders for empty slots', () => {
     const standardResult = convertMidiToVp(createMidiFixture(), { notationMode: 'standard' as never });
-    const compactResult = convertMidiToVp(createMidiFixture(), { notationMode: 'zen' });
 
-    expect(standardResult.notation.selected).toBe(compactResult.notation.zen);
+    expect(standardResult.notation.selected).toBe('[tu]yd');
+    expect(standardResult.notation.selected).not.toContain('-');
+    expect(standardResult.notation.selected).not.toContain('|');
     expect(standardResult.notation.mode).toBe('standard');
   });
 });

@@ -1,4 +1,5 @@
 export type VpNotationMode = 'extended' | 'standard' | 'zen';
+export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'hardcore';
 
 export type TempoSegment = {
   ticks: number;

@@ -60,26 +60,10 @@ export function serializeVpTimeline(timeline: TimelineSlot[], options: Serialize
     return formatTokens(tokens, options.format);
   }
 
-  const activeEndSlots: number[] = [];
-
   for (const slot of timeline) {
-    for (let i = activeEndSlots.length - 1; i >= 0; i -= 1) {
-      if (activeEndSlots[i] <= slot.slot) {
-        activeEndSlots.splice(i, 1);
-      }
-    }
-
     if (slot.notes.length > 0) {
       tokens.push(renderSlotToken(slot.notes));
-      slot.notes.forEach((note) => {
-        if (note.endSlot > slot.slot + 1) {
-          activeEndSlots.push(note.endSlot);
-        }
-      });
-      continue;
     }
-
-    tokens.push(activeEndSlots.some((endSlot) => endSlot > slot.slot) ? '-' : '|');
   }
 
   return formatTokens(tokens, options.format);

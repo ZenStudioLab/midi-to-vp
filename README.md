@@ -43,7 +43,12 @@ midi-to-vp input.mid --mode zen --slots-per-quarter 8
 ### Programmatic API
 
 ```typescript
-import { convertMidiFileToVp, convertMidiToVp } from '@zen/midi-to-vp';
+import {
+  convertMidiFileToVp,
+  convertMidiToVp,
+  convertMidiWithDifficulty,
+  getDifficultyPreset
+} from '@zen/midi-to-vp';
 import { convertMidiToVp as convertMidiToVpBrowser } from '@zen/midi-to-vp/browser';
 
 // Convert from file path
@@ -64,6 +69,10 @@ const result2 = convertMidiToVp(buffer, { notationMode: 'zen' });
 
 // Browser-safe import (no Node.js fs dependency)
 const browserResult = convertMidiToVpBrowser(buffer, { notationMode: 'zen' });
+
+// Convert with built-in difficulty preset
+const hardResult = convertMidiWithDifficulty(buffer, 'hard');
+const easyPreset = getDifficultyPreset('easy');
 ```
 
 ## API Reference
@@ -85,6 +94,26 @@ Converts MIDI binary data to Virtual Piano notation.
 **Parameters:**
 - `input` (Uint8Array | Buffer): MIDI file data
 - `options` (ConversionOptions): Conversion configuration
+
+**Returns:** `ConversionResult`
+
+### `getDifficultyPreset(level)`
+
+Returns built-in conversion options for player-friendly profiles.
+
+**Parameters:**
+- `level` (`'easy' | 'medium' | 'hard' | 'hardcore'`)
+
+**Returns:** `ConversionOptions`
+
+### `convertMidiWithDifficulty(input, level, overrides?)`
+
+Converts MIDI data using a built-in difficulty profile, with optional overrides.
+
+**Parameters:**
+- `input` (`Uint8Array | Buffer`): MIDI file data
+- `level` (`'easy' | 'medium' | 'hard' | 'hardcore'`)
+- `overrides` (`ConversionOptions`): Optional values to override preset defaults
 
 **Returns:** `ConversionResult`
 
@@ -195,7 +224,7 @@ For player-facing UX documentation, use:
 - `extended`: full-range notation
 - `standard`: compact notation (alias of API `zen`)
 
-Recommended profile presets:
+Built-in profile presets:
 
 | Level | UX Notation Label | API `notationMode` | `slotsPerQuarter` | `simplifyChords` | `maxChordSize` | `dedupe` |
 |------|--------------------|--------------------|-------------------|------------------|----------------|----------|
@@ -204,7 +233,7 @@ Recommended profile presets:
 | `hard` | `extended` | `extended` | `4` | `true` | `4` | `true` |
 | `hardcore` | `extended` | `extended` | `8` | `false` | `6` | `false` |
 
-These are documentation-level presets for product consistency; callers can still override any conversion option directly.
+Use `getDifficultyPreset(level)` to fetch these values, or `convertMidiWithDifficulty(input, level, overrides)` to convert directly with a profile.
 
 ## Development
 

@@ -69,11 +69,13 @@ QuantizedNoteEvent[] → TimelineSlot[] → string (notation)
 - **Extended**: `C4 D4 [C4 E4 G4]` (88-key piano range)
 - **Standard / Zen**: `a s [asf]` (36-key compact, 3 octaves; `standard` is alias of `zen`)
 
-**Player Difficulty Profiles** (documentation-level contract):
+**Player Difficulty Profiles** (built-in API contract):
 - **easy**: standard UX label (maps to API `zen`), lower quantization/chord density
 - **medium**: standard UX label (maps to API `zen`), balanced readability/detail
 - **hard**: extended notation, standard quantization
 - **hardcore**: extended notation, high resolution and reduced simplification
+
+Profiles are exposed via `getDifficultyPreset(level)` and `convertMidiWithDifficulty(input, level, overrides?)`.
 
 ## Performance
 

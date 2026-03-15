@@ -24,7 +24,10 @@ describe('package exports: browser compatibility', () => {
   it('provides a browser entry source that only exposes browser-safe API', async () => {
     const browserEntry = await readFile(BROWSER_ENTRY_PATH, 'utf8');
 
-    expect(browserEntry).toContain("export { convertMidiToVp } from './convert.js';");
+    expect(browserEntry).toMatch(
+      /export\s*\{\s*convertMidiToVp(?:,\s*convertMidiWithDifficulty)?\s*\}\s*from '\.\/convert\.js';/
+    );
+    expect(browserEntry).toContain("export { getDifficultyPreset } from './presets.js';");
     expect(browserEntry).not.toContain('convertMidiFileToVp');
     expect(browserEntry).not.toContain('node:fs/promises');
   });
