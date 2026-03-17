@@ -1,4 +1,4 @@
-export type VpNotationMode = 'extended' | 'standard' | 'minimal';
+export type VpNotationMode = 'extended' | 'standard';
 export type DifficultyLevel = 'Novice' | 'Apprentice' | 'Adept' | 'Master' | 'Guru';
 
 export type TempoSegment = {

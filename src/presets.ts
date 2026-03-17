@@ -2,14 +2,14 @@ import type { ConversionOptions, DifficultyLevel } from './types.js';
 
 const DIFFICULTY_PRESETS: Record<DifficultyLevel, ConversionOptions> = {
   Novice: {
-    notationMode: 'minimal',
+    notationMode: 'standard',
     quantization: { slotsPerQuarter: 2 },
     simplifyChords: true,
     maxChordSize: 2,
     dedupe: true
   },
   Apprentice: {
-    notationMode: 'minimal',
+    notationMode: 'standard',
     quantization: { slotsPerQuarter: 4 },
     simplifyChords: true,
     maxChordSize: 3,
