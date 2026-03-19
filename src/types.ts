@@ -66,7 +66,6 @@ export type ConversionResult = {
   notation: {
     extended: string;
     standard: string;
-    minimal: string;
     selected: string;
     mode: VpNotationMode;
   };

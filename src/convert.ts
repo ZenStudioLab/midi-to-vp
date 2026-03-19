@@ -46,10 +46,7 @@ export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionO
     format: options.format
   });
 
-  const notationMinimal = serializeVpTimeline(timeline, {
-    mode: 'minimal',
-    format: options.format
-  });
+
 
   const warnings = [...transformed.warnings];
 
@@ -63,13 +60,10 @@ export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionO
     notation: {
       extended: notationExtended,
       standard: notationStandard,
-      minimal: notationMinimal,
       selected:
-        notationMode === 'minimal'
-          ? notationMinimal
-          : notationMode === 'standard'
-            ? notationStandard
-            : notationExtended,
+        notationMode === 'standard'
+          ? notationStandard
+          : notationExtended,
       mode: notationMode
     },
     tempoSegments: parsed.tempoSegments,
