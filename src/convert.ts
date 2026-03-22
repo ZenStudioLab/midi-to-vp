@@ -24,7 +24,8 @@ export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionO
 
   const transformed = transformNotesToVpRange(normalizedNotes, keymap, {
     includePercussion,
-    dedupe
+    dedupe,
+    extraTranspose: options.transposeSemitones ?? 0
   });
 
   const stepSec = (60 / parsed.tempoBpm) / slotsPerQuarter;

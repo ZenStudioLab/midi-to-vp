@@ -54,6 +54,7 @@ export type ConversionOptions = {
   maxChordSize?: number;
   format?: FormattingOptions | null;
   keymap?: VpKeymap;
+  transposeSemitones?: number;
 };
 
 export type ConversionResult = {

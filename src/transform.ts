@@ -3,6 +3,7 @@ import type { NoteEvent, VpKeymap } from './types.js';
 type TransformOptions = {
   includePercussion: boolean;
   dedupe: boolean;
+  extraTranspose?: number;
 };
 
 type TransformResult = {
@@ -97,7 +98,7 @@ export function transformNotesToVpRange(
   });
 
   const deduped = options.dedupe ? dedupeNotes(filtered) : [...filtered];
-  const transposeSemitones = chooseBestOctaveShift(deduped, keymap.minMidi, keymap.maxMidi);
+  const transposeSemitones = chooseBestOctaveShift(deduped, keymap.minMidi, keymap.maxMidi) + (options.extraTranspose ?? 0);
 
   const transformed = deduped.map((note) => {
     const shiftedMidi = note.midi + transposeSemitones;
