@@ -74,6 +74,7 @@ export type ConversionResult = {
   metadata: {
     tempoBpm: number;
     slotsPerQuarter: number;
+    timeSignature?: string;
     stepSec: number;
     totalSlots: number;
     sourceTrackCount: number;
@@ -87,6 +88,7 @@ export type ConversionResult = {
 export type ParsedMidiData = {
   tempoSegments: TempoSegment[];
   tempoBpm: number;
+  timeSignature?: string;
   trackCount: number;
 };
 

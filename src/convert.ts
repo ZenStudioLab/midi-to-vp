@@ -71,6 +71,7 @@ export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionO
     metadata: {
       tempoBpm: parsed.tempoBpm,
       slotsPerQuarter,
+      timeSignature: parsed.timeSignature,
       stepSec,
       totalSlots: timeline.length,
       sourceTrackCount: parsed.trackCount,

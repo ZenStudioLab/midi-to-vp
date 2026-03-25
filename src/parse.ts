@@ -4,6 +4,7 @@ import type { ParsedMidiData, TempoSegment } from './types.js';
 type MidiConstructor = new (input: Uint8Array) => {
   header: {
     tempos?: Array<{ ticks: number; bpm: number; time?: number }>;
+    timeSignatures?: Array<{ ticks: number; timeSignature: [number, number] }>;
   };
   tracks: Array<{
     channel?: number;
@@ -37,12 +38,17 @@ export function parseMidiBuffer(input: Uint8Array | Buffer): {
   }));
 
   const tempoBpm = tempoSegments[0]?.bpm ?? 120;
+  const firstTimeSignature = midi.header.timeSignatures?.[0]?.timeSignature;
+  const timeSignature = firstTimeSignature
+    ? `${firstTimeSignature[0]}/${firstTimeSignature[1]}`
+    : undefined;
 
   return {
     midi,
     parsed: {
       tempoSegments,
       tempoBpm,
+      timeSignature,
       trackCount: midi.tracks.length
     }
   };
