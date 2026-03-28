@@ -18,14 +18,14 @@ describe('integration: conversion pipeline', () => {
 
   it('keeps slot parity across notation modes', () => {
     const extended = convertMidiToVp(createMidiFixture(), { notationMode: 'extended' });
-    const minimal = convertMidiToVp(createMidiFixture(), { notationMode: 'minimal' });
+    const standard = convertMidiToVp(createMidiFixture(), { notationMode: 'standard' });
 
-    expect(extended.metadata.totalSlots).toBe(minimal.metadata.totalSlots);
-    expect(extended.timeline.length).toBe(minimal.timeline.length);
+    expect(extended.metadata.totalSlots).toBe(standard.metadata.totalSlots);
+    expect(extended.timeline.length).toBe(standard.timeline.length);
   });
 
   it('serializes standard mode without dash placeholders for empty slots', () => {
-    const standardResult = convertMidiToVp(createMidiFixture(), { notationMode: 'standard' as never });
+    const standardResult = convertMidiToVp(createMidiFixture(), { notationMode: 'standard' });
 
     expect(standardResult.notation.selected).toBe('[tu]yd');
     expect(standardResult.notation.selected).not.toContain('-');

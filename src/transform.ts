@@ -1,5 +1,8 @@
 import type { NoteEvent, VpKeymap } from './types.js';
 
+const MIN_VP_MIDI = 48;
+const MAX_VP_MIDI = 95;
+
 type TransformOptions = {
   includePercussion: boolean;
   dedupe: boolean;
@@ -88,6 +91,8 @@ export function transformNotesToVpRange(
   options: TransformOptions
 ): TransformResult {
   const warnings: string[] = [];
+  const minMidi = Math.max(keymap.minMidi, MIN_VP_MIDI);
+  const maxMidi = Math.min(keymap.maxMidi, MAX_VP_MIDI);
 
   const filtered = notes.filter((note) => {
     if (options.includePercussion) {
@@ -98,11 +103,12 @@ export function transformNotesToVpRange(
   });
 
   const deduped = options.dedupe ? dedupeNotes(filtered) : [...filtered];
-  const transposeSemitones = chooseBestOctaveShift(deduped, keymap.minMidi, keymap.maxMidi) + (options.extraTranspose ?? 0);
+  const rawTransposeSemitones = chooseBestOctaveShift(deduped, minMidi, maxMidi) + (options.extraTranspose ?? 0);
+  const transposeSemitones = Object.is(rawTransposeSemitones, -0) ? 0 : rawTransposeSemitones;
 
   const transformed = deduped.map((note) => {
     const shiftedMidi = note.midi + transposeSemitones;
-    const foldedMidi = foldMidiIntoRange(shiftedMidi, keymap.minMidi, keymap.maxMidi);
+    const foldedMidi = foldMidiIntoRange(shiftedMidi, minMidi, maxMidi);
 
     if (shiftedMidi !== foldedMidi) {
       warnings.push(`Folded note ${shiftedMidi} into VP range as ${foldedMidi}`);

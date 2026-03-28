@@ -8,7 +8,7 @@ import { transformNotesToVpRange } from './transform.js';
 import type { ConversionOptions, ConversionResult, DifficultyLevel } from './types.js';
 
 const DEFAULT_SLOTS_PER_QUARTER = 4;
-const DEFAULT_MAX_CHORD_SIZE = 4;
+const DEFAULT_MAX_CHORD_SIZE = 3;
 
 export function convertMidiToVp(input: Uint8Array | Buffer, options: ConversionOptions = {}): ConversionResult {
   const keymap = options.keymap ?? createDefaultVpKeymap();
