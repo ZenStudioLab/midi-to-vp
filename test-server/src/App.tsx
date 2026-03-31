@@ -24,8 +24,8 @@ import {
   LinearProgress,
   styled
 } from '@mui/material';
-import { analyzeVpNotation, convertMidiToVp, getDifficultyPreset } from '@zen/midi-to-vp';
-import type { AnalysisResult, ConversionResult, DifficultyLevel, VpNotationMode } from '@zen/midi-to-vp';
+import { analyzeVpNotation, convertMidiToVp, getDifficultyPreset } from '@zen/midi-to-vp/browser';
+import type { AnalysisResult, ConversionResult, DifficultyLevel, VpNotationMode } from '@zen/midi-to-vp/browser';
 import { useState } from 'react';
 
 const VisuallyHiddenInput = styled('input')({
@@ -79,7 +79,7 @@ function App() {
   const [includePercussion, setIncludePercussion] = useState(false);
   const [dedupe, setDedupe] = useState(true);
   const [simplifyChords, setSimplifyChords] = useState(true);
-  const [maxChordSize, setMaxChordSize] = useState(4);
+  const [maxChordSize, setMaxChordSize] = useState(3);
 
   const applyDifficultyPreset = (level: DifficultyLevel) => {
     const preset = getDifficultyPreset(level);
@@ -88,7 +88,7 @@ function App() {
     setSlotsPerQuarter(preset.quantization?.slotsPerQuarter ?? 4);
     setDedupe(preset.dedupe ?? true);
     setSimplifyChords(preset.simplifyChords ?? true);
-    setMaxChordSize(preset.maxChordSize ?? 4);
+    setMaxChordSize(preset.maxChordSize ?? 3);
   };
 
   const analyzeSelectedFile = async (selectedFile: File) => {
@@ -163,7 +163,7 @@ function App() {
             MIDI to Virtual Piano Converter
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            Convert MIDI files to Virtual Piano notation (Minimal, Standard, and Extended modes)
+            Convert MIDI files to Virtual Piano notation (Standard and Extended modes)
           </Typography>
         </Box>
 
@@ -232,7 +232,6 @@ function App() {
                       label="Notation Mode"
                       onChange={(e) => setNotationMode(e.target.value as VpNotationMode)}
                     >
-                      <MenuItem value="minimal">Minimal (36-Key)</MenuItem>
                       <MenuItem value="extended">Extended (Full Range)</MenuItem>
                       <MenuItem value="standard">Standard (Compact)</MenuItem>
                     </Select>
@@ -448,10 +447,10 @@ function App() {
                     </Box>
                     <Box>
                       <Typography variant="subtitle2" gutterBottom>
-                        Minimal Notation
+                        Selected Mode
                       </Typography>
                       <Paper variant="outlined" className="p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
-                        {result.notation.minimal}
+                        {result.notation.selected}
                       </Paper>
                     </Box>
                   </Stack>

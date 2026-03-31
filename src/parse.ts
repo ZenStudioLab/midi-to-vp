@@ -20,16 +20,55 @@ type MidiConstructor = new (input: Uint8Array) => {
 const MidiCtor = ((ToneMidi as unknown as { Midi?: MidiConstructor; default?: { Midi?: MidiConstructor } }).Midi ??
   (ToneMidi as unknown as { default?: { Midi?: MidiConstructor } }).default?.Midi) as MidiConstructor;
 
-export function parseMidiBuffer(input: Uint8Array | Buffer): {
+const PARSE_ERROR_PATTERNS: Array<{ code: string; pattern: RegExp }> = [
+  { code: 'INVALID_MIDI_FILE', pattern: /bad midi file|invalid midi|mthd/i },
+  { code: 'UNEXPECTED_END', pattern: /unexpected end|truncated|out of bounds|offset is outside/i },
+  { code: 'INVALID_TRACK_DATA', pattern: /running status|invalid track|track (?:chunk|data|length)|end of track/i },
+];
+
+export class ParseMidiError extends Error {
+  code: string;
+  cause?: unknown;
+
+  constructor(code: string, message: string, options?: { cause?: unknown }) {
+    super(message);
+    this.name = 'ParseMidiError';
+    this.code = code;
+    this.cause = options?.cause;
+  }
+}
+
+export function getKnownParseErrorCode(message: string): string | undefined {
+  const match = PARSE_ERROR_PATTERNS.find((candidate) => candidate.pattern.test(message));
+  return match?.code;
+}
+
+export function parseMidiBuffer(input: Uint8Array): {
   midi: InstanceType<MidiConstructor>;
   parsed: ParsedMidiData;
 } {
   if (!MidiCtor) {
-    throw new Error('Unable to resolve Midi constructor from @tonejs/midi');
+    throw new TypeError('Unable to resolve Midi constructor from @tonejs/midi');
   }
 
-  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
-  const midi = new MidiCtor(bytes);
+  const bytes = input;
+  let midi: InstanceType<MidiConstructor>;
+
+  try {
+    midi = new MidiCtor(bytes);
+  } catch (error) {
+    if (error instanceof ParseMidiError) {
+      throw error;
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    const code = getKnownParseErrorCode(message);
+    if (code) {
+      throw new ParseMidiError(code, message, { cause: error });
+    }
+
+    throw error;
+  }
 
   const tempoSegments: TempoSegment[] = (midi.header.tempos ?? []).map((tempo) => ({
     ticks: tempo.ticks,

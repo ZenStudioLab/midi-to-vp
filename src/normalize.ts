@@ -14,24 +14,30 @@ type MidiLike = {
   }>;
 };
 
-export function normalizeMidiNotes(midi: MidiLike): NoteEvent[] {
-  const normalized: NoteEvent[] = [];
+export function collectMidiNotes(midi: MidiLike): NoteEvent[] {
+  const collected: NoteEvent[] = [];
 
   midi.tracks.forEach((track, trackIndex) => {
     const channel = track.channel ?? 0;
 
     track.notes.forEach((note) => {
-      normalized.push({
+      collected.push({
         midi: note.midi,
         startSec: note.time,
         durationSec: note.duration,
         endSec: note.time + note.duration,
         velocity: note.velocity,
         track: trackIndex,
-        channel
+        channel,
       });
     });
   });
+
+  return collected;
+}
+
+export function normalizeMidiNotes(midi: MidiLike): NoteEvent[] {
+  const normalized = collectMidiNotes(midi);
 
   const gridStep = detectGridStep(normalized);
   const snapped = normalized.map((note) => snapNoteToGrid(note, gridStep));

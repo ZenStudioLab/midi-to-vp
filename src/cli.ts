@@ -28,7 +28,7 @@ Options:
   --notation-out <path>      Notation text output path
   --mode <extended|standard> Selected notation mode (default: extended)
   --slots-per-quarter <n>    Quantization resolution (default: 4)
-  --max-chord-size <n>       Max notes to keep per chord (default: 4)
+  --max-chord-size <n>       Max notes to keep per chord (default: 3)
   --include-percussion       Keep MIDI channel 10 notes
   --no-dedupe                Disable duplicate-note dedupe
   --no-chord-simplify        Disable chord simplification
@@ -53,7 +53,7 @@ function parseArgs(argv: string[]): CliOptions {
     includePercussion: false,
     dedupe: true,
     simplifyChords: true,
-    maxChordSize: 4,
+    maxChordSize: 3,
     jsonIndent: 2,
     showHelp: false
   };

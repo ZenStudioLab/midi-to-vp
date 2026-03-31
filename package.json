@@ -40,7 +40,7 @@
     "build:types": "tsc -p tsconfig.build.types.json",
     "build:cjs-meta": "mkdir -p dist/cjs && cp package.cjs.json dist/cjs/package.json",
     "build": "yarn clean && yarn build:esm && yarn build:cjs && yarn build:types && yarn build:cjs-meta",
-    "type-check": "tsc -p tsconfig.json --noEmit",
+    "type-check": "yarn build:types && tsc -p tsconfig.json --noEmit && tsc -p tests/tsconfig.browser.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

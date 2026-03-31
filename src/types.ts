@@ -57,6 +57,15 @@ export type ConversionOptions = {
   transposeSemitones?: number;
 };
 
+export type QualitySignals = {
+  totalRawNotes: number;
+  inRangeNotes: number;
+  averageChordSize: number;
+  peakChordSize: number;
+  notesPerSecond: number;
+  timingJitter: number;
+};
+
 export type ConversionResult = {
   normalizedNotes: NoteEvent[];
   transformedNotes: NoteEvent[];
@@ -78,12 +87,32 @@ export type ConversionResult = {
     stepSec: number;
     totalSlots: number;
     sourceTrackCount: number;
+    qualitySignals: QualitySignals;
     vpRange: {
       minMidi: number;
       maxMidi: number;
     };
   };
 };
+
+export type ConversionFailureReason = 'corrupted_midi' | 'empty_midi' | 'percussion_only' | 'internal_error';
+
+export type ConversionFailure = {
+  ok: false;
+  reason: ConversionFailureReason;
+  details?: {
+    code?: string;
+    message?: string;
+    cause?: unknown;
+    source?: string;
+  };
+};
+
+export type ConversionSuccess = ConversionResult & {
+  ok: true;
+};
+
+export type ConversionOutcome = ConversionSuccess | ConversionFailure;
 
 export type ParsedMidiData = {
   tempoSegments: TempoSegment[];

@@ -4,7 +4,7 @@
 
 ## Features
 
-- 🎹 **Three Notation Modes**: Minimal (36-key), Standard (compact), and Extended (dash-aware)
+- 🎹 **Two Notation Modes**: Standard (compact) and Extended (dash-aware)
 - 🧭 **Player Difficulty Profiles**: Built-in presets for `Novice`, `Apprentice`, `Adept`, `Master`, `Guru`
 - 📊 **Sheet Analysis**: Analyze notation and get difficulty recommendations
 - 🎼 **Smart Conversion**: Automatic transpose, quantization, and chord simplification
@@ -37,20 +37,21 @@ midi-to-vp input.mid --out result.json
 # Export notation to text file
 midi-to-vp input.mid --notation-out sheet.txt
 
-# Minimal mode with custom quantization
-midi-to-vp input.mid --mode minimal --slots-per-quarter 8
+# Standard mode with custom quantization
+midi-to-vp input.mid --mode standard --slots-per-quarter 8
 ```
 
 ### Programmatic API
 
 ```typescript
 import {
-  convertMidiFileToVp,
   convertMidiToVp,
+  tryConvertMidiToVp,
   convertMidiWithLevel,
   getDifficultyPreset,
   analyzeVpNotation
 } from '@zen/midi-to-vp';
+import { convertMidiFileToVp } from '@zen/midi-to-vp/node';
 import { convertMidiToVp as convertMidiToVpBrowser } from '@zen/midi-to-vp/browser';
 
 // Convert from file path
@@ -58,7 +59,7 @@ const result = await convertMidiFileToVp('song.mid', {
   notationMode: 'extended',
   quantization: { slotsPerQuarter: 4 },
   simplifyChords: true,
-  maxChordSize: 4
+  maxChordSize: 3
 });
 
 console.log(result.notation.extended);
@@ -67,10 +68,16 @@ console.log(`Total slots: ${result.metadata.totalSlots}`);
 
 // Convert from buffer
 const buffer = await readFile('song.mid');
-const result2 = convertMidiToVp(buffer, { notationMode: 'minimal' });
+const result2 = convertMidiToVp(buffer, { notationMode: 'standard' });
 
 // Browser-safe import (no Node.js fs dependency)
-const browserResult = convertMidiToVpBrowser(buffer, { notationMode: 'minimal' });
+const browserResult = convertMidiToVpBrowser(buffer, { notationMode: 'standard' });
+
+// Classified conversion outcome without throwing on invalid MIDI
+const safeResult = tryConvertMidiToVp(buffer, { notationMode: 'extended' });
+if (!safeResult.ok) {
+  console.error(safeResult.reason, safeResult.details);
+}
 
 // Convert with built-in difficulty preset
 const masterResult = convertMidiWithLevel(buffer, { level: 'Master' });
@@ -83,6 +90,8 @@ const analysis = analyzeVpNotation(masterResult.notation.selected);
 ### `convertMidiFileToVp(inputPath, options?)`
 
 Converts a MIDI file to Virtual Piano notation.
+
+Import from `@zen/midi-to-vp/node`.
 
 **Parameters:**
 - `inputPath` (string): Path to MIDI file
@@ -99,6 +108,16 @@ Converts MIDI binary data to Virtual Piano notation.
 - `options` (ConversionOptions): Conversion configuration
 
 **Returns:** `ConversionResult`
+
+### `tryConvertMidiToVp(input, options?)`
+
+Converts MIDI binary data and returns a structured success/failure outcome instead of throwing for classified converter failures.
+
+**Parameters:**
+- `input` (`Uint8Array`): MIDI file data
+- `options` (`ConversionOptions`): Conversion configuration
+
+**Returns:** `ConversionOutcome`
 
 ### `getDifficultyPreset(level)`
 
@@ -130,14 +149,14 @@ Analyzes a notation string and returns difficulty metrics + recommended profile.
 
 ```typescript
 {
-  notationMode?: 'extended' | 'standard' | 'minimal'; // Default: 'extended'
+  notationMode?: 'extended' | 'standard'; // Default: 'extended'
   quantization?: {
     slotsPerQuarter?: number;               // Default: 4
   };
   includePercussion?: boolean;              // Default: false
   dedupe?: boolean;                         // Default: true
   simplifyChords?: boolean;                 // Default: true
-  maxChordSize?: number;                    // Default: 4
+  maxChordSize?: number;                    // Default: 3
   format?: {
     groupSlots?: number;
     lineBreakEveryGroups?: number;
@@ -159,9 +178,8 @@ Analyzes a notation string and returns difficulty metrics + recommended profile.
   notation: {
     extended: string;                       // Extended notation
     standard: string;                       // Standard notation
-    minimal: string;                        // Minimal notation
     selected: string;                       // Based on mode
-    mode: 'extended' | 'standard' | 'minimal';
+    mode: 'extended' | 'standard';
   };
   tempoSegments: TempoSegment[];            // Tempo map
   metadata: {
@@ -170,6 +188,14 @@ Analyzes a notation string and returns difficulty metrics + recommended profile.
     stepSec: number;
     totalSlots: number;
     sourceTrackCount: number;
+    qualitySignals: {
+      totalRawNotes: number;
+      inRangeNotes: number;
+      averageChordSize: number;
+      peakChordSize: number;
+      notesPerSecond: number;
+      timingJitter: number;
+    };
     vpRange: { minMidi: number; maxMidi: number };
   };
 }
@@ -187,9 +213,9 @@ midi-to-vp <input.mid> [options]
 |--------|-------------|---------|
 | `--out <path>` | JSON output path | `<input>.vp.json` |
 | `--notation-out <path>` | Notation text output path | - |
-| `--mode <extended\|standard\|minimal>` | Notation mode | `extended` |
+| `--mode <extended\|standard>` | Notation mode | `extended` |
 | `--slots-per-quarter <n>` | Quantization resolution | `4` |
-| `--max-chord-size <n>` | Max notes per chord | `4` |
+| `--max-chord-size <n>` | Max notes per chord | `3` |
 | `--include-percussion` | Keep MIDI channel 10 | `false` |
 | `--no-dedupe` | Disable duplicate removal | - |
 | `--no-chord-simplify` | Disable chord simplification | - |
@@ -208,8 +234,8 @@ midi-to-vp complex.mid --no-chord-simplify
 # Include percussion track
 midi-to-vp drums.mid --include-percussion
 
-# Minimal mode with formatted output
-midi-to-vp tune.mid --mode minimal --notation-out minimal-sheet.txt
+# Standard mode with formatted output
+midi-to-vp tune.mid --mode standard --notation-out standard-sheet.txt
 ```
 
 ## Notation Formats
@@ -220,22 +246,16 @@ Full note names with octave numbers:
 C4 D4 E4 | F4 G4 A4 | [C4 E4 G4]
 ```
 
-### Minimal Notation
-Compact alphanumeric representation (36-key range):
-```
-a s d | f g h | [asf]
-```
-
 ## Player Difficulty Profiles
 
-`@zen/midi-to-vp` exposes `notationMode: 'extended' | 'standard' | 'minimal'` in code.
+`@zen/midi-to-vp` exposes `notationMode: 'extended' | 'standard'` in code.
 
 Built-in profile presets:
 
 | Level | API `notationMode` | `slotsPerQuarter` | `simplifyChords` | `maxChordSize` | `dedupe` |
 |------|---------------------|-------------------|------------------|----------------|----------|
-| `Novice` | `minimal` | `2` | `true` | `2` | `true` |
-| `Apprentice` | `minimal` | `4` | `true` | `3` | `true` |
+| `Novice` | `standard` | `2` | `true` | `2` | `true` |
+| `Apprentice` | `standard` | `4` | `true` | `3` | `true` |
 | `Adept` | `standard` | `4` | `true` | `4` | `true` |
 | `Master` | `extended` | `8` | `false` | `5` | `true` |
 | `Guru` | `extended` | `8` | `false` | `6` | `false` |
@@ -284,7 +304,7 @@ yarn dev
 Visit http://localhost:3100 to:
 - Upload MIDI files
 - Configure conversion options in real-time
-- View notation output (Extended & Zen)
+- View notation output (Extended & Standard)
 - Download results as text or JSON
 
 See [`test-server/README.md`](./test-server/README.md) for details.

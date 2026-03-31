@@ -1,7 +1,7 @@
 import type { NoteEvent, VpKeymap } from './types.js';
 
-const MIN_VP_MIDI = 48;
-const MAX_VP_MIDI = 95;
+export const MIN_VP_MIDI = 36;
+export const MAX_VP_MIDI = 96;
 
 type TransformOptions = {
   includePercussion: boolean;
