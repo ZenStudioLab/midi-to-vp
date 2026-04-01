@@ -24,8 +24,8 @@ import {
   LinearProgress,
   styled
 } from '@mui/material';
-import { analyzeVpNotation, convertMidiToVp, getDifficultyPreset } from '@zen/midi-to-vp/browser';
-import type { AnalysisResult, ConversionResult, DifficultyLevel, VpNotationMode } from '@zen/midi-to-vp/browser';
+import { analyzeVpNotation, convertMidiToVp, getDifficultyPreset, scoreConversionQuality } from '@zen/midi-to-vp/browser';
+import type { AnalysisResult, ConversionResult, DifficultyLevel, ScoringAssessment, VpNotationMode } from '@zen/midi-to-vp/browser';
 import { useState } from 'react';
 
 const VisuallyHiddenInput = styled('input')({
@@ -71,6 +71,7 @@ function App() {
   const [tabValue, setTabValue] = useState(0);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
 
+  const [scoring, setScoring] = useState<ScoringAssessment | null>(null);
   const [difficultyLevel, setDifficultyLevel] = useState<DifficultyLevel>('Adept');
 
   // Conversion options
@@ -102,10 +103,12 @@ function App() {
       });
       const nextAnalysis = analyzeVpNotation(preview.notation.selected);
       setAnalysis(nextAnalysis);
+      setScoring(scoreConversionQuality(preview.metadata.qualitySignals));
       applyDifficultyPreset(nextAnalysis.recommendedLevel);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Analysis failed');
       setAnalysis(null);
+      setScoring(null);
     } finally {
       setAnalyzing(false);
     }
@@ -117,6 +120,7 @@ function App() {
       setFile(selectedFile);
       setError(null);
       setResult(null);
+      setScoring(null);
       void analyzeSelectedFile(selectedFile);
     }
   };
@@ -145,10 +149,12 @@ function App() {
       });
 
       setAnalysis(analyzeVpNotation(conversionResult.notation.selected));
+      setScoring(scoreConversionQuality(conversionResult.metadata.qualitySignals));
       setResult(conversionResult);
       setTabValue(0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Conversion failed');
+      setScoring(null);
     } finally {
       setLoading(false);
     }
@@ -344,6 +350,120 @@ function App() {
                     </Box>
                   </Stack>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quality Score Panel */}
+          {scoring && (
+            <Card elevation={3} data-testid="quality-score-panel">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Conversion Quality
+                </Typography>
+                <Stack spacing={2}>
+                  {/* Score badge */}
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Score
+                    </Typography>
+                    <Typography
+                      variant="h4"
+                      data-testid="quality-score-value"
+                      sx={{
+                        color:
+                          scoring.score >= 0.75
+                            ? 'success.main'
+                            : scoring.score >= 0.5
+                            ? 'warning.main'
+                            : 'error.main',
+                      }}
+                    >
+                      {(scoring.score * 100).toFixed(1)}
+                    </Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={scoring.score * 100}
+                      sx={{
+                        mt: 0.5,
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor:
+                            scoring.score >= 0.75
+                              ? 'success.main'
+                              : scoring.score >= 0.5
+                              ? 'warning.main'
+                              : 'error.main',
+                        },
+                      }}
+                    />
+                  </Box>
+
+                  {/* Rubric version */}
+                  <Box>
+                    <Chip label={`Rubric: ${scoring.rubricVersion}`} size="small" variant="outlined" />
+                  </Box>
+
+                  {/* Signal progress bars */}
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Signals
+                    </Typography>
+                    <Stack spacing={1}>
+                      {[
+                        { label: 'In-Range Ratio', value: scoring.signals.inRangeRatio },
+                        { label: 'Chord Complexity', value: scoring.signals.chordComplexity },
+                        { label: 'Note Density', value: scoring.signals.noteDensity },
+                        { label: 'Timing Consistency', value: scoring.signals.timingConsistency },
+                      ].map(({ label, value }) => (
+                        <Box key={label}>
+                          <Typography variant="caption" color="text.secondary">
+                            {label} ({(value * 100).toFixed(1)})
+                          </Typography>
+                          <LinearProgress variant="determinate" value={value * 100} />
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Box>
+
+                  {/* Reason code chips */}
+                  {scoring.reasons.length > 0 && (
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Reason Codes
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {scoring.reasons.map((code) => (
+                          <Chip
+                            key={code}
+                            label={code}
+                            size="small"
+                            color={
+                              code.startsWith('FATAL_') || code.startsWith('INPUT_LIMIT_EXCEEDED_')
+                                ? 'error'
+                                : 'warning'
+                            }
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Stats summary */}
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Stats
+                    </Typography>
+                    <Box className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                      <div><strong>Total Notes:</strong> {scoring.stats.totalNotes}</div>
+                      <div><strong>In-Range:</strong> {scoring.stats.inRangeNotes}</div>
+                      <div><strong>Peak Chord:</strong> {scoring.stats.peakChordSize}</div>
+                      <div><strong>Hard Chord Rate:</strong> {(scoring.stats.hardChordRate * 100).toFixed(1)}%</div>
+                      <div><strong>Max Notes/s:</strong> {scoring.stats.maxNotesPerSecond.toFixed(1)}</div>
+                      <div><strong>Duration:</strong> {scoring.stats.durationSeconds.toFixed(1)}s</div>
+                      <div><strong>Grid Confidence:</strong> {(scoring.stats.gridConfidence * 100).toFixed(1)}%</div>
+                    </Box>
+                  </Box>
+                </Stack>
               </CardContent>
             </Card>
           )}
