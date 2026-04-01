@@ -32,6 +32,8 @@ describe('package exports: browser compatibility', () => {
     expect(browserEntry).toContain('export function tryConvertMidiToVp(input: Uint8Array');
     expect(browserEntry).toContain('export function convertMidiWithDifficulty(');
     expect(browserEntry).toContain('export function convertMidiWithLevel(');
+    expect(browserEntry).toContain("export { inferTempoGrid } from './grid-inference.js';");
+    expect(browserEntry).toContain("export { SCORING_RUBRIC_VERSION, scoreConversionQuality } from './quality-scorer.js';");
     expect(browserEntry).toContain("export { MIN_VP_MIDI, MAX_VP_MIDI } from './transform.js';");
     expect(browserEntry).toContain("export { getDifficultyPreset } from './presets.js';");
     expect(browserEntry).toContain("export { analyzeVpNotation } from './analyze.js';");

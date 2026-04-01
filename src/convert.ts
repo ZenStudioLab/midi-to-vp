@@ -1,7 +1,9 @@
 import { createDefaultVpKeymap } from './keymap.js';
+import { inferTempoGrid } from './grid-inference.js';
 import { collectMidiNotes, normalizeMidiNotes } from './normalize.js';
 import { getKnownParseErrorCode, ParseMidiError, parseMidiBuffer } from './parse.js';
 import { getDifficultyPreset } from './presets.js';
+import { getP95 } from './quality-scorer.js';
 import { buildTimeline, quantizeNotes } from './quantize.js';
 import { serializeVpTimeline } from './serialize.js';
 import { MAX_VP_MIDI, MIN_VP_MIDI, transformNotesToVpRange } from './transform.js';
@@ -15,6 +17,7 @@ import type {
   NoteEvent,
   ParsedMidiData,
   QualitySignals,
+  QuantizedNoteEvent,
 } from './types.js';
 
 type ParsedMidiInput = ReturnType<typeof parseMidiBuffer>;
@@ -33,35 +36,138 @@ function getPitchedNotes(notes: NoteEvent[]): NoteEvent[] {
   return notes.filter((note) => note.channel !== 9);
 }
 
+function nearestGridDistance(onset: number, beatGrid: number[]): number {
+  if (beatGrid.length === 0) {
+    return 0;
+  }
+
+  return beatGrid.reduce(
+    (nearestDistance, gridPoint) => Math.min(nearestDistance, Math.abs(onset - gridPoint)),
+    Number.POSITIVE_INFINITY,
+  );
+}
+
+function buildSubdivisionGrid(beatGrid: number[], slotsPerQuarter: number, fallbackStepSec: number): number[] {
+  if (beatGrid.length === 0) {
+    return [];
+  }
+
+  if (beatGrid.length === 1) {
+    const step = fallbackStepSec > 0 ? fallbackStepSec : 0.125;
+    return Array.from({ length: slotsPerQuarter }, (_, index) => Number((beatGrid[0] + step * index).toFixed(6)));
+  }
+
+  const subdivisionGrid: number[] = [];
+  for (let index = 0; index < beatGrid.length - 1; index += 1) {
+    const beatStart = beatGrid[index];
+    const beatEnd = beatGrid[index + 1];
+    const beatDuration = beatEnd - beatStart;
+    const subdivisionStep = beatDuration > 0 ? beatDuration / slotsPerQuarter : fallbackStepSec;
+
+    for (let slot = 0; slot < slotsPerQuarter; slot += 1) {
+      subdivisionGrid.push(Number((beatStart + subdivisionStep * slot).toFixed(6)));
+    }
+  }
+
+  subdivisionGrid.push(Number(beatGrid[beatGrid.length - 1].toFixed(6)));
+  return subdivisionGrid;
+}
+
+function buildChordSizesBySlot(quantizedNotes: QuantizedNoteEvent[]): number[] {
+  const chordSizesBySlot = new Map<number, number>();
+
+  for (const note of quantizedNotes) {
+    chordSizesBySlot.set(note.startSlot, (chordSizesBySlot.get(note.startSlot) ?? 0) + 1);
+  }
+
+  return [...chordSizesBySlot.values()].filter((size) => size > 0);
+}
+
+function buildLocalDensityStats(notes: NoteEvent[], durationSeconds: number): {
+  avgNotesPerSecond: number;
+  p95NotesPerSecond: number;
+  maxNotesPerSecond: number;
+} {
+  const bucketWidthSeconds = 1;
+
+  if (notes.length === 0) {
+    return {
+      avgNotesPerSecond: 0,
+      p95NotesPerSecond: 0,
+      maxNotesPerSecond: 0,
+    };
+  }
+
+  const firstOnset = Math.min(...notes.map((note) => note.startSec));
+  const activeDurationSeconds = Math.max(bucketWidthSeconds, durationSeconds - firstOnset);
+  const bucketCount = Math.max(1, Math.ceil(activeDurationSeconds / bucketWidthSeconds));
+  const buckets = new Array<number>(bucketCount).fill(0);
+
+  for (const note of notes) {
+    const bucketIndex = Math.min(
+      bucketCount - 1,
+      Math.max(0, Math.floor((note.startSec - firstOnset) / bucketWidthSeconds)),
+    );
+    buckets[bucketIndex] += 1;
+  }
+
+  const avgNotesPerSecond = durationSeconds > 0 ? notes.length / durationSeconds : notes.length;
+  const bucketRates = buckets.map((bucketCountValue) => bucketCountValue / bucketWidthSeconds);
+
+  return {
+    avgNotesPerSecond: Number(avgNotesPerSecond.toFixed(6)),
+    p95NotesPerSecond: Number(getP95(bucketRates).toFixed(6)),
+    maxNotesPerSecond: Number(Math.max(...bucketRates).toFixed(6)),
+  };
+}
+
 function computeQualitySignals(
   rawNotes: NoteEvent[],
   transformedNotes: NoteEvent[],
-  timeline: ConversionResult['timeline'],
-  stepSec: number
+  quantizedNotes: QuantizedNoteEvent[],
+  stepSec: number,
+  tempoSegments: ParsedMidiData['tempoSegments'],
+  vpRange: { minMidi: number; maxMidi: number },
 ): QualitySignals {
   const pitchedRawNotes = getPitchedNotes(rawNotes);
-  const occupiedSlots = timeline.filter((slot) => slot.notes.length > 0);
-  const chordSizes = occupiedSlots.map((slot) => slot.notes.length);
+  const chordSizes = buildChordSizesBySlot(quantizedNotes);
   const durationSeconds = transformedNotes.length === 0
     ? 0
     : Number(Math.max(...transformedNotes.map((note) => note.endSec)).toFixed(3));
-  const notesPerSecond = durationSeconds > 0
-    ? Number((transformedNotes.length / durationSeconds).toFixed(6))
-    : transformedNotes.length;
+  const densityStats = buildLocalDensityStats(transformedNotes, durationSeconds);
+  const inferredGrid = inferTempoGrid(
+    pitchedRawNotes.map((note) => note.startSec),
+    tempoSegments,
+  );
+  const slotsPerQuarter = stepSec > 0 ? Math.max(1, Math.round((60 / (tempoSegments[0]?.bpm ?? 120)) / stepSec)) : 1;
+  const subdivisionGrid = buildSubdivisionGrid(inferredGrid.beatGrid, slotsPerQuarter, stepSec);
   const jitterOffsets = pitchedRawNotes.map((note) => {
-    const nearestGrid = Math.round(note.startSec / stepSec) * stepSec;
-    return Math.abs(note.startSec - nearestGrid) / Math.max(stepSec, 0.000001);
+    if (inferredGrid.beatGrid.length === 0) {
+      const nearestGrid = Math.round(note.startSec / stepSec) * stepSec;
+      return Math.abs(note.startSec - nearestGrid) / Math.max(stepSec, 0.000001);
+    }
+
+    const nearestDistance = nearestGridDistance(note.startSec, subdivisionGrid);
+
+    return nearestDistance / Math.max(stepSec, 0.000001);
   });
 
   return {
     totalRawNotes: pitchedRawNotes.length,
-    inRangeNotes: pitchedRawNotes.filter((note) => note.midi >= MIN_VP_MIDI && note.midi <= MAX_VP_MIDI).length,
+    inRangeNotes: pitchedRawNotes.filter((note) => note.midi >= vpRange.minMidi && note.midi <= vpRange.maxMidi).length,
     averageChordSize: chordSizes.length === 0 ? 0 : chordSizes.reduce((sum, value) => sum + value, 0) / chordSizes.length,
     peakChordSize: chordSizes.length === 0 ? 0 : Math.max(...chordSizes),
-    notesPerSecond,
+    avgNotesPerSecond: densityStats.avgNotesPerSecond,
     timingJitter: jitterOffsets.length === 0
       ? 0
-      : Number((jitterOffsets.reduce((sum, value) => sum + value, 0) / jitterOffsets.length).toFixed(6)),
+      : Number(getP95(jitterOffsets).toFixed(6)),
+    p95ChordSize: chordSizes.length === 0 ? 0 : Number(getP95(chordSizes).toFixed(6)),
+    hardChordRate: chordSizes.length === 0
+      ? 0
+      : Number((chordSizes.filter((size) => size >= 5).length / chordSizes.length).toFixed(6)),
+    p95NotesPerSecond: densityStats.p95NotesPerSecond,
+    maxNotesPerSecond: densityStats.maxNotesPerSecond,
+    gridConfidence: Number(inferredGrid.confidence.toFixed(6)),
   };
 }
 
@@ -96,7 +202,14 @@ function runConversion(
   });
 
   const quantizedNotes = timeline.flatMap((slot) => slot.notes);
-  const qualitySignals = computeQualitySignals(rawNotes, transformed.notes, timeline, stepSec);
+  const qualitySignals = computeQualitySignals(
+    rawNotes,
+    transformed.notes,
+    quantized,
+    stepSec,
+    parsed.tempoSegments,
+    { minMidi: vpMinMidi, maxMidi: vpMaxMidi },
+  );
 
   const notationExtended = serializeVpTimeline(timeline, {
     mode: 'extended',

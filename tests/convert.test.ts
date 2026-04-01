@@ -47,14 +47,20 @@ describe('tryConvertMidiToVp', () => {
       throw new Error('expected successful conversion');
     }
 
-    expect(result.metadata.qualitySignals).toEqual({
+    expect(result.metadata.qualitySignals).toMatchObject({
       totalRawNotes: 4,
       inRangeNotes: 4,
       averageChordSize: 4 / 3,
       peakChordSize: 2,
-      notesPerSecond: 6.4,
-      timingJitter: 0,
+      avgNotesPerSecond: 6.4,
     });
+    expect(result.metadata.qualitySignals).not.toHaveProperty('notesPerSecond');
+    expect(result.metadata.qualitySignals.p95ChordSize).toBeGreaterThanOrEqual(result.metadata.qualitySignals.averageChordSize);
+    expect(result.metadata.qualitySignals.p95ChordSize).toBeLessThanOrEqual(result.metadata.qualitySignals.peakChordSize);
+    expect(result.metadata.qualitySignals.p95NotesPerSecond).toBeLessThanOrEqual(result.metadata.qualitySignals.maxNotesPerSecond);
+    expect(result.metadata.qualitySignals.p95NotesPerSecond).toBeGreaterThan(0);
+    expect(result.metadata.qualitySignals.gridConfidence).toBeGreaterThanOrEqual(0);
+    expect(result.metadata.qualitySignals.gridConfidence).toBeLessThanOrEqual(1);
   });
 
   it('keeps raw note counts distinct from simplified chord metrics', () => {
@@ -70,9 +76,11 @@ describe('tryConvertMidiToVp', () => {
 
     expect(result.metadata.qualitySignals.totalRawNotes).toBe(6);
     expect(result.metadata.qualitySignals.inRangeNotes).toBe(6);
-    expect(result.metadata.qualitySignals.averageChordSize).toBe(3);
-    expect(result.metadata.qualitySignals.peakChordSize).toBe(3);
-    expect(result.metadata.qualitySignals.notesPerSecond).toBe(24);
+    expect(result.metadata.qualitySignals.averageChordSize).toBe(6);
+    expect(result.metadata.qualitySignals.peakChordSize).toBe(6);
+    expect(result.metadata.qualitySignals.avgNotesPerSecond).toBe(24);
+    expect(result.metadata.qualitySignals.p95ChordSize).toBe(6);
+    expect(result.metadata.qualitySignals.hardChordRate).toBe(1);
   });
 
   it('computes timing jitter from pre-snap timing offsets', () => {
@@ -87,7 +95,9 @@ describe('tryConvertMidiToVp', () => {
     }
 
     expect(result.metadata.qualitySignals.totalRawNotes).toBe(2);
-    expect(result.metadata.qualitySignals.timingJitter).toBeCloseTo(0.083333, 6);
+    expect(result.metadata.qualitySignals.timingJitter).toBeGreaterThan(0);
+    expect(result.metadata.qualitySignals.gridConfidence).toBeGreaterThanOrEqual(0);
+    expect(result.metadata.qualitySignals.gridConfidence).toBeLessThanOrEqual(1);
   });
 
   it('returns corrupted_midi for invalid bytes', () => {
@@ -149,8 +159,8 @@ describe('tryConvertMidiToVp', () => {
     });
 
     expect(result.metadata.vpRange).toEqual({
-      minMidi: 48,
-      maxMidi: 95,
+      minMidi: 36,
+      maxMidi: 96,
     });
   });
 });

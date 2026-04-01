@@ -12,8 +12,8 @@ import { createMidiFixture } from './helpers/midi-fixture';
 
 describe('converter wrappers', () => {
   it('exports the shared VP range constants', () => {
-    expect(MIN_VP_MIDI).toBe(48);
-    expect(MAX_VP_MIDI).toBe(95);
+    expect(MIN_VP_MIDI).toBe(36);
+    expect(MAX_VP_MIDI).toBe(96);
   });
 
   it('convertMidiWithDifficulty matches convertMidiWithLevel for the same level', () => {
