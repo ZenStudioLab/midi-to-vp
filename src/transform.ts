@@ -1,4 +1,4 @@
-import type { NoteEvent, VpKeymap } from './types.js';
+import type { NoteEvent, VpKeymap } from "./types.js";
 
 export const MIN_VP_MIDI = 36;
 export const MAX_VP_MIDI = 96;
@@ -28,10 +28,16 @@ function dedupeNotes(notes: NoteEvent[]): NoteEvent[] {
     }
   }
 
-  return [...byIdentity.values()].sort((a, b) => a.startSec - b.startSec || a.midi - b.midi);
+  return [...byIdentity.values()].sort(
+    (a, b) => a.startSec - b.startSec || a.midi - b.midi,
+  );
 }
 
-function chooseBestOctaveShift(notes: NoteEvent[], minMidi: number, maxMidi: number): number {
+function chooseBestOctaveShift(
+  notes: NoteEvent[],
+  minMidi: number,
+  maxMidi: number,
+): number {
   if (notes.length === 0) {
     return 0;
   }
@@ -63,7 +69,11 @@ function chooseBestOctaveShift(notes: NoteEvent[], minMidi: number, maxMidi: num
   return bestShift;
 }
 
-function foldMidiIntoRange(midi: number, minMidi: number, maxMidi: number): number {
+function foldMidiIntoRange(
+  midi: number,
+  minMidi: number,
+  maxMidi: number,
+): number {
   let current = midi;
 
   while (current < minMidi) {
@@ -88,7 +98,7 @@ function foldMidiIntoRange(midi: number, minMidi: number, maxMidi: number): numb
 export function transformNotesToVpRange(
   notes: NoteEvent[],
   keymap: VpKeymap,
-  options: TransformOptions
+  options: TransformOptions,
 ): TransformResult {
   const warnings: string[] = [];
   const minMidi = Math.max(keymap.minMidi, MIN_VP_MIDI);
@@ -103,26 +113,35 @@ export function transformNotesToVpRange(
   });
 
   const deduped = options.dedupe ? dedupeNotes(filtered) : [...filtered];
-  const rawTransposeSemitones = chooseBestOctaveShift(deduped, minMidi, maxMidi) + (options.extraTranspose ?? 0);
-  const transposeSemitones = Object.is(rawTransposeSemitones, -0) ? 0 : rawTransposeSemitones;
+  const notesForShift = options.includePercussion
+    ? deduped.filter((note) => note.channel !== 9)
+    : deduped;
+  const rawTransposeSemitones =
+    chooseBestOctaveShift(notesForShift, minMidi, maxMidi) +
+    (options.extraTranspose ?? 0);
+  const transposeSemitones = Object.is(rawTransposeSemitones, -0)
+    ? 0
+    : rawTransposeSemitones;
 
   const transformed = deduped.map((note) => {
     const shiftedMidi = note.midi + transposeSemitones;
     const foldedMidi = foldMidiIntoRange(shiftedMidi, minMidi, maxMidi);
 
     if (shiftedMidi !== foldedMidi) {
-      warnings.push(`Folded note ${shiftedMidi} into VP range as ${foldedMidi}`);
+      warnings.push(
+        `Folded note ${shiftedMidi} into VP range as ${foldedMidi}`,
+      );
     }
 
     return {
       ...note,
-      midi: foldedMidi
+      midi: foldedMidi,
     };
   });
 
   return {
     notes: transformed,
     transposeSemitones,
-    warnings
+    warnings,
   };
 }
