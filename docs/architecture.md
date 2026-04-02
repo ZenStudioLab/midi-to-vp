@@ -34,7 +34,7 @@ See [ADR 0003: Five-Stage Conversion Pipeline](./adr/0003-conversion-pipeline-ar
 ```
 MIDI Binary → Parse → Normalize → Transform → Quantize → Serialize → Notation
               ↓        ↓           ↓           ↓           ↓
-            Tempo    NoteEvent[] Transpose  Timeline   Extended/Zen
+            Tempo    NoteEvent[] Transpose  Timeline   Extended/Standard
                                   Filter    Simplify      Text
 ```
 
@@ -46,7 +46,7 @@ MIDI Binary → Parse → Normalize → Transform → Quantize → Serialize →
 | **Normalize** | `normalize.ts` | Convert to `NoteEvent[]` with absolute time (seconds) |
 | **Transform** | `transform.ts` | Auto-transpose, filter percussion, dedupe with [default keymap constraints](./adr/0006-default-keymap-design.md) |
 | **Quantize** | `quantize.ts` | Snap to grid, build `TimelineSlot[]`, simplify chords per [ADR 0005](./adr/0005-quantization-and-timeline-algorithm.md) |
-| **Serialize** | `serialize.ts` | Format to Extended (`C4 D4`) or Zen (`a s`) notation |
+| **Serialize** | `serialize.ts` | Format to Extended or Standard VP key notation |
 | **CLI** | `cli.ts` | Parse options, validate inputs, and write outputs via [ADR 0007](./adr/0007-cli-architecture.md) |
 
 **Orchestration**: `convert.ts` chains modules, returns `ConversionResult` with intermediate outputs for debugging.
@@ -66,14 +66,13 @@ QuantizedNoteEvent[] → TimelineSlot[] → string (notation)
 - `ConversionResult`: Full output with intermediate arrays, notation, metadata, warnings
 
 **Notation Modes**:
-- **Minimal**: `a b c [abc]` (36-key compact notation)
 - **Standard**: VP key output without dash placeholders
-- **Extended**: Standard output plus `-` for empty timeline slots
+- **Extended**: VP key output with `-` for empty timeline slots
 
 **Player Difficulty Profiles** (built-in API contract):
-- **Novice**: minimal notation, lowest density
-- **Apprentice**: minimal notation, balanced beginner profile
-- **Adept**: standard notation
+- **Novice**: standard notation, lowest density
+- **Apprentice**: standard notation, balanced beginner profile
+- **Adept**: standard notation, moderate complexity
 - **Master**: extended notation, higher rhythmic resolution
 - **Guru**: extended notation, maximum fidelity
 

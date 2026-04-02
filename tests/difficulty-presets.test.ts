@@ -3,7 +3,7 @@ import { convertMidiToVp, convertMidiWithLevel, getDifficultyPreset } from '../s
 import { createMidiFixture } from './helpers/midi-fixture';
 
 describe('difficulty presets', () => {
-  it('TC-N-01: returns Novice preset with minimal notation and beginner-friendly options', () => {
+  it('TC-N-01: returns Novice preset with standard notation and beginner-friendly options', () => {
     // Given: Novice difficulty level
     const level = 'Novice';
 
@@ -12,7 +12,7 @@ describe('difficulty presets', () => {
 
     // Then: expected conversion options are returned
     expect(preset).toMatchObject({
-      notationMode: 'minimal',
+      notationMode: 'standard',
       quantization: { slotsPerQuarter: 2 },
       simplifyChords: true,
       maxChordSize: 2,
@@ -58,7 +58,7 @@ describe('difficulty presets', () => {
 
     // Then: selected output matches the direct conversion path
     expect(viaDifficulty.notation.selected).toBe(direct.notation.selected);
-    expect(viaDifficulty.notation.mode).toBe('minimal');
+    expect(viaDifficulty.notation.mode).toBe('standard');
     expect(viaDifficulty.metadata.slotsPerQuarter).toBe(2);
   });
 

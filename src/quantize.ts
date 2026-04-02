@@ -1,12 +1,22 @@
-import type { NoteEvent, QuantizedNoteEvent, TimelineSlot, VpKeymap } from './types.js';
+import type {
+  NoteEvent,
+  QuantizedNoteEvent,
+  TimelineSlot,
+  VpKeymap,
+} from "./types.js";
 
 type TimelineOptions = {
   simplifyChords: boolean;
   maxChordSize: number;
 };
 
-function simplifyChord(notes: QuantizedNoteEvent[], maxChordSize: number): QuantizedNoteEvent[] {
-  if (notes.length <= maxChordSize) {
+function simplifyChord(
+  notes: QuantizedNoteEvent[],
+  maxChordSize: number,
+): QuantizedNoteEvent[] {
+  const allowedChordSize = maxChordSize;
+
+  if (notes.length <= allowedChordSize) {
     return [...notes].sort((a, b) => a.midi - b.midi);
   }
 
@@ -14,23 +24,31 @@ function simplifyChord(notes: QuantizedNoteEvent[], maxChordSize: number): Quant
   const bass = sorted[0];
   const melody = sorted[sorted.length - 1];
 
-  if (maxChordSize <= 1) {
+  if (allowedChordSize <= 1) {
     return [melody];
   }
 
-  if (maxChordSize === 2) {
+  if (allowedChordSize === 2) {
     return [bass, melody];
   }
 
-  const middle = sorted.slice(1, -1).sort((a, b) => b.velocity - a.velocity || a.midi - b.midi);
-  const keepMiddleCount = maxChordSize - 2;
-  const keptMiddle = middle.slice(0, keepMiddleCount).sort((a, b) => a.midi - b.midi);
+  const middle = sorted
+    .slice(1, -1)
+    .sort((a, b) => b.velocity - a.velocity || a.midi - b.midi);
+  const keepMiddleCount = allowedChordSize - 2;
+  const keptMiddle = middle
+    .slice(0, keepMiddleCount)
+    .sort((a, b) => a.midi - b.midi);
 
   return [bass, ...keptMiddle, melody].sort((a, b) => a.midi - b.midi);
 }
 
-export function quantizeNotes(notes: NoteEvent[], stepSec: number, keymap: VpKeymap): QuantizedNoteEvent[] {
-  const quantized: QuantizedNoteEvent[] = [];
+export function quantizeNotes(
+  notes: NoteEvent[],
+  stepSec: number,
+  keymap: VpKeymap,
+): QuantizedNoteEvent[] {
+  const deduped = new Map<string, QuantizedNoteEvent>();
 
   for (const note of notes) {
     const vpKey = keymap.midiToKey[note.midi];
@@ -42,19 +60,41 @@ export function quantizeNotes(notes: NoteEvent[], stepSec: number, keymap: VpKey
     const durSlots = Math.max(1, Math.round(note.durationSec / stepSec));
     const endSlot = startSlot + durSlots;
 
-    quantized.push({
+    const quantizedNote: QuantizedNoteEvent = {
       ...note,
       startSlot,
       durSlots,
       endSlot,
-      vpKey
+      vpKey,
+    };
+
+    const dedupeKey = `${startSlot}:${note.midi}:${note.channel}`;
+    const existing = deduped.get(dedupeKey);
+
+    if (!existing) {
+      deduped.set(dedupeKey, quantizedNote);
+      continue;
+    }
+
+    deduped.set(dedupeKey, {
+      ...existing,
+      durationSec: Math.max(existing.durationSec, quantizedNote.durationSec),
+      endSec: Math.max(existing.endSec, quantizedNote.endSec),
+      durSlots: Math.max(existing.durSlots, quantizedNote.durSlots),
+      endSlot: Math.max(existing.endSlot, quantizedNote.endSlot),
+      velocity: Math.max(existing.velocity, quantizedNote.velocity),
     });
   }
 
-  return quantized.sort((a, b) => a.startSlot - b.startSlot || a.midi - b.midi);
+  return [...deduped.values()].sort(
+    (a, b) => a.startSlot - b.startSlot || a.midi - b.midi,
+  );
 }
 
-export function buildTimeline(quantized: QuantizedNoteEvent[], options: TimelineOptions): TimelineSlot[] {
+export function buildTimeline(
+  quantized: QuantizedNoteEvent[],
+  options: TimelineOptions,
+): TimelineSlot[] {
   const bySlot = new Map<number, QuantizedNoteEvent[]>();
   let maxSlot = 0;
 
@@ -83,11 +123,11 @@ export function buildTimeline(quantized: QuantizedNoteEvent[], options: Timeline
     const unique = [...mergedByPitch.values()];
     const slotNotes = options.simplifyChords
       ? simplifyChord(unique, options.maxChordSize)
-      : unique.sort((a, b) => a.midi - b.midi);
+      : unique.sort((a, b) => a.midi - b.midi).slice(0, options.maxChordSize);
 
     timeline.push({
       slot,
-      notes: slotNotes
+      notes: slotNotes,
     });
   }
 

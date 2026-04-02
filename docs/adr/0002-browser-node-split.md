@@ -91,7 +91,7 @@ import { convertMidiToVp } from '@zen/midi-to-vp';  // ✅ Works
 import { convertMidiToVp as browserConvert } from '@zen/midi-to-vp/browser';  // ✅ Explicit browser entry
 
 // Node.js code (CLI, server)
-import { convertMidiFileToVp } from '@zen/midi-to-vp';  // ✅ Works
+import { convertMidiFileToVp } from '@zen/midi-to-vp/node';  // ✅ Works
 import { convertMidiFileToVp as nodeConvert } from '@zen/midi-to-vp/node';    // ✅ Explicit Node entry
 ```
 

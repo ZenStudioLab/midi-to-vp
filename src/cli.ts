@@ -28,7 +28,7 @@ Options:
   --notation-out <path>      Notation text output path
   --mode <extended|standard> Selected notation mode (default: extended)
   --slots-per-quarter <n>    Quantization resolution (default: 4)
-  --max-chord-size <n>       Max notes to keep per chord (default: 4)
+  --max-chord-size <n>       Max notes to keep per chord (default: 3)
   --include-percussion       Keep MIDI channel 10 notes
   --no-dedupe                Disable duplicate-note dedupe
   --no-chord-simplify        Disable chord simplification
@@ -53,7 +53,7 @@ function parseArgs(argv: string[]): CliOptions {
     includePercussion: false,
     dedupe: true,
     simplifyChords: true,
-    maxChordSize: 4,
+    maxChordSize: 3,
     jsonIndent: 2,
     showHelp: false
   };
@@ -72,16 +72,30 @@ function parseArgs(argv: string[]): CliOptions {
       case '--help':
         options.showHelp = true;
         break;
-      case '--out':
-        options.outPath = argv[index + 1];
+      case '--out': {
+        const value = argv[index + 1];
+        if (!value || value.startsWith('--')) {
+          throw new Error(`--out requires a value`);
+        }
+        options.outPath = value;
         index += 1;
         break;
-      case '--notation-out':
-        options.notationOutPath = argv[index + 1];
+      }
+      case '--notation-out': {
+        const value = argv[index + 1];
+        if (!value || value.startsWith('--')) {
+          throw new Error(`--notation-out requires a value`);
+        }
+        options.notationOutPath = value;
         index += 1;
         break;
+      }
       case '--mode': {
-        const mode = argv[index + 1] as VpNotationMode;
+        const value = argv[index + 1];
+        if (!value || value.startsWith('--')) {
+          throw new Error(`--mode requires a value`);
+        }
+        const mode = value as VpNotationMode;
         if (mode !== 'extended' && mode !== 'standard') {
           throw new Error(`Unsupported mode: ${mode}`);
         }
@@ -89,14 +103,24 @@ function parseArgs(argv: string[]): CliOptions {
         index += 1;
         break;
       }
-      case '--slots-per-quarter':
-        options.slotsPerQuarter = Number.parseInt(argv[index + 1], 10);
+      case '--slots-per-quarter': {
+        const value = argv[index + 1];
+        if (!value || value.startsWith('--')) {
+          throw new Error(`--slots-per-quarter requires a value`);
+        }
+        options.slotsPerQuarter = Number.parseInt(value, 10);
         index += 1;
         break;
-      case '--max-chord-size':
-        options.maxChordSize = Number.parseInt(argv[index + 1], 10);
+      }
+      case '--max-chord-size': {
+        const value = argv[index + 1];
+        if (!value || value.startsWith('--')) {
+          throw new Error(`--max-chord-size requires a value`);
+        }
+        options.maxChordSize = Number.parseInt(value, 10);
         index += 1;
         break;
+      }
       case '--include-percussion':
         options.includePercussion = true;
         break;
@@ -106,10 +130,15 @@ function parseArgs(argv: string[]): CliOptions {
       case '--no-chord-simplify':
         options.simplifyChords = false;
         break;
-      case '--json-indent':
-        options.jsonIndent = Number.parseInt(argv[index + 1], 10);
+      case '--json-indent': {
+        const value = argv[index + 1];
+        if (!value || value.startsWith('--')) {
+          throw new Error(`--json-indent requires a value`);
+        }
+        options.jsonIndent = Number.parseInt(value, 10);
         index += 1;
         break;
+      }
       default:
         throw new Error(`Unknown option: ${arg}`);
     }
