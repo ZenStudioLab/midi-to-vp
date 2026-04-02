@@ -40,4 +40,25 @@ describe('inferTempoGrid', () => {
     expect(result.beatGrid.every(Number.isFinite)).toBe(true);
     expect(result.confidence).toBeLessThan(0.85);
   });
+
+  it('returns IOI result when tempo segments have zero confidence', () => {
+    const result = inferTempoGrid(
+      [0, 0.5, 1, 1.5, 2],
+      [],
+    );
+
+    expect(result.confidence).toBeGreaterThan(0);
+    expect(result.beatGrid.length).toBeGreaterThan(3);
+    expect(result.beatGrid[1] - result.beatGrid[0]).toBeCloseTo(0.5, 6);
+  });
+
+  it('returns IOI result when IOI confidence is higher than tempo confidence', () => {
+    const evenlySpacedOnsets = [0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+    const tempoSegments = [{ ticks: 0, bpm: 120, timeSec: 0 }];
+
+    const result = inferTempoGrid(evenlySpacedOnsets, tempoSegments);
+
+    expect(result.confidence).toBeGreaterThan(0.8);
+    expect(result.beatGrid[1] - result.beatGrid[0]).toBeCloseTo(0.25, 6);
+  });
 });

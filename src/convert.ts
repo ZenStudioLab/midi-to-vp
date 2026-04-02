@@ -130,6 +130,10 @@ function computeQualitySignals(
   vpRange: { minMidi: number; maxMidi: number },
 ): QualitySignals {
   const pitchedRawNotes = getPitchedNotes(rawNotes);
+  const outputTotalNotes = transformedNotes.length;
+  const outputInRangeNotes = transformedNotes.filter(
+    (note) => note.midi >= vpRange.minMidi && note.midi <= vpRange.maxMidi
+  ).length;
   const chordSizes = buildChordSizesBySlot(quantizedNotes);
   const durationSeconds = transformedNotes.length === 0
     ? 0
@@ -155,6 +159,8 @@ function computeQualitySignals(
   return {
     totalRawNotes: pitchedRawNotes.length,
     inRangeNotes: pitchedRawNotes.filter((note) => note.midi >= vpRange.minMidi && note.midi <= vpRange.maxMidi).length,
+    outputTotalNotes,
+    outputInRangeNotes,
     averageChordSize: chordSizes.length === 0 ? 0 : chordSizes.reduce((sum, value) => sum + value, 0) / chordSizes.length,
     peakChordSize: chordSizes.length === 0 ? 0 : Math.max(...chordSizes),
     avgNotesPerSecond: densityStats.avgNotesPerSecond,

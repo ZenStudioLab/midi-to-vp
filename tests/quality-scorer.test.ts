@@ -10,6 +10,8 @@ function createSignals(overrides: Partial<QualitySignals> = {}): QualitySignals 
   return {
     totalRawNotes: 100,
     inRangeNotes: 92,
+    outputTotalNotes: 98,
+    outputInRangeNotes: 95,
     averageChordSize: 1.5,
     peakChordSize: 4,
     avgNotesPerSecond: 4.5,
@@ -32,15 +34,17 @@ describe('scoreConversionQuality', () => {
       expect(value).toBeGreaterThanOrEqual(0);
       expect(value).toBeLessThanOrEqual(1);
     });
+    expect(result.stats.totalNotes).toBe(98);
+    expect(result.stats.inRangeNotes).toBe(95);
     expect(result.stats.avgNotesPerSecond).toBe(4.5);
     expect(result.stats.p95NotesPerSecond).toBe(6);
     expect(result.stats.maxNotesPerSecond).toBe(7);
     expect(result.stats.gridConfidence).toBe(0.9);
-    expect(result.stats.durationSeconds).toBeCloseTo(100 / 4.5, 6);
+    expect(result.stats.durationSeconds).toBeCloseTo(98 / 4.5, 6);
   });
 
   it('forces score 0 for fatal in-range ratio', () => {
-    const result = scoreConversionQuality(createSignals({ inRangeNotes: 40 }));
+    const result = scoreConversionQuality(createSignals({ outputInRangeNotes: 30, outputTotalNotes: 60 }));
 
     expect(result.score).toBe(0);
     expect(result.reasons).toContain('FATAL_IN_RANGE_RATIO');
@@ -67,6 +71,23 @@ describe('scoreConversionQuality', () => {
     expect(result.reasons).toContain('FATAL_MAX_NOTE_DENSITY');
   });
 
+  it('falls back to the legacy raw-note population when output counters are omitted', () => {
+    const { outputTotalNotes, outputInRangeNotes, ...legacySignals } = createSignals();
+
+    const result = scoreConversionQuality(legacySignals);
+
+    expect(outputTotalNotes).toBeDefined();
+    expect(outputInRangeNotes).toBeDefined();
+    expect(result.stats.totalNotes).toBe(100);
+    expect(result.stats.inRangeNotes).toBe(92);
+    expect(result.stats.durationSeconds).toBeCloseTo(100 / 4.5, 6);
+  });
+
+  it('rejects partial output-note populations', () => {
+    expect(() => scoreConversionQuality(createSignals({ outputInRangeNotes: undefined }))).toThrow(RangeError);
+    expect(() => scoreConversionQuality(createSignals({ outputTotalNotes: undefined }))).toThrow(RangeError);
+  });
+
   it('treats timing as less authoritative when grid confidence is low', () => {
     const lowConfidence = scoreConversionQuality(createSignals({ timingJitter: 0.2, gridConfidence: 0.25 }));
     const mediumConfidence = scoreConversionQuality(createSignals({ timingJitter: 0.2, gridConfidence: 0.8 }));
@@ -82,7 +103,8 @@ describe('scoreConversionQuality', () => {
   it('emits reasons in deterministic severity order', () => {
     const result = scoreConversionQuality(
       createSignals({
-        inRangeNotes: 60,
+        outputInRangeNotes: 60,
+        outputTotalNotes: 100,
         peakChordSize: 6,
         p95ChordSize: 4,
         hardChordRate: 0.2,

@@ -2,7 +2,7 @@ import { Midi } from '@tonejs/midi';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createDefaultVpKeymap } from '../src/keymap';
-import { convertMidiToVp, tryConvertMidiToVp } from '../src/index';
+import { convertMidiToVp, scoreConversionQuality, tryConvertMidiToVp } from '../src/index';
 import { createDenseChordMidi, createMidiFixture } from './helpers/midi-fixture';
 
 function createEmptyMidi(): Uint8Array {
@@ -131,6 +131,17 @@ describe('tryConvertMidiToVp', () => {
     });
 
     expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error('expected successful conversion');
+    }
+
+    expect(result.metadata.qualitySignals.outputTotalNotes).toBe(1);
+    expect(result.metadata.qualitySignals.outputInRangeNotes).toBe(1);
+
+    const assessment = scoreConversionQuality(result.metadata.qualitySignals);
+    expect(assessment.stats.totalNotes).toBe(1);
+    expect(assessment.stats.inRangeNotes).toBe(1);
+    expect(assessment.score).toBeGreaterThan(0);
   });
 
   it('still treats a truly empty MIDI as empty when includePercussion is true', () => {

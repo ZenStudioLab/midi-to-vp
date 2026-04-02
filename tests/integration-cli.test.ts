@@ -61,4 +61,85 @@ describe('integration: cli', () => {
     expect(parsed.notation.mode).toBe('standard');
     expect(parsed.notation.selected).toBe(parsed.notation.standard);
   });
+
+  it('returns exit code 1 when --out is missing its value', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'midi-to-vp-'));
+    const midiPath = path.join(tempDir, 'input.mid');
+
+    await writeFile(midiPath, createMidiFixture());
+
+    const exitCode = await runCli([midiPath, '--out']);
+
+    expect(exitCode).toBe(1);
+  });
+
+  it('returns exit code 1 when --notation-out is missing its value', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'midi-to-vp-'));
+    const midiPath = path.join(tempDir, 'input.mid');
+
+    await writeFile(midiPath, createMidiFixture());
+
+    const exitCode = await runCli([midiPath, '--notation-out']);
+
+    expect(exitCode).toBe(1);
+  });
+
+  it('returns exit code 1 when --mode is missing its value', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'midi-to-vp-'));
+    const midiPath = path.join(tempDir, 'input.mid');
+    const jsonPath = path.join(tempDir, 'output.json');
+
+    await writeFile(midiPath, createMidiFixture());
+
+    const exitCode = await runCli([midiPath, '--out', jsonPath, '--mode']);
+
+    expect(exitCode).toBe(1);
+  });
+
+  it('returns exit code 1 when --slots-per-quarter is missing its value', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'midi-to-vp-'));
+    const midiPath = path.join(tempDir, 'input.mid');
+    const jsonPath = path.join(tempDir, 'output.json');
+
+    await writeFile(midiPath, createMidiFixture());
+
+    const exitCode = await runCli([midiPath, '--out', jsonPath, '--slots-per-quarter']);
+
+    expect(exitCode).toBe(1);
+  });
+
+  it('returns exit code 1 when --max-chord-size is missing its value', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'midi-to-vp-'));
+    const midiPath = path.join(tempDir, 'input.mid');
+    const jsonPath = path.join(tempDir, 'output.json');
+
+    await writeFile(midiPath, createMidiFixture());
+
+    const exitCode = await runCli([midiPath, '--out', jsonPath, '--max-chord-size']);
+
+    expect(exitCode).toBe(1);
+  });
+
+  it('returns exit code 1 when --json-indent is missing its value', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'midi-to-vp-'));
+    const midiPath = path.join(tempDir, 'input.mid');
+    const jsonPath = path.join(tempDir, 'output.json');
+
+    await writeFile(midiPath, createMidiFixture());
+
+    const exitCode = await runCli([midiPath, '--out', jsonPath, '--json-indent']);
+
+    expect(exitCode).toBe(1);
+  });
+
+  it('returns exit code 1 when required-value flag is followed by another flag', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'midi-to-vp-'));
+    const midiPath = path.join(tempDir, 'input.mid');
+
+    await writeFile(midiPath, createMidiFixture());
+
+    const exitCode = await runCli([midiPath, '--out', '--mode', 'extended']);
+
+    expect(exitCode).toBe(1);
+  });
 });

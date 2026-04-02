@@ -87,4 +87,43 @@ describe('quantize + serialize', () => {
     expect(slotZero).toBeDefined();
     expect(slotZero!.notes.length).toBeLessThanOrEqual(3);
   });
+
+  it('Guru preset (simplifyChords=false, maxChordSize=6) allows up to 6 notes per chord', () => {
+    const result = convertMidiToVp(createDenseChordMidi(), {
+      simplifyChords: false,
+      maxChordSize: 6,
+      quantization: { slotsPerQuarter: 4 },
+    });
+
+    const slotZero = result.timeline.find((slot) => slot.slot === 0);
+    expect(slotZero).toBeDefined();
+    expect(slotZero!.notes.length).toBeGreaterThan(3);
+    expect(slotZero!.notes.length).toBeLessThanOrEqual(6);
+  });
+
+  it('Master preset (simplifyChords=false, maxChordSize=5) allows up to 5 notes per chord', () => {
+    const result = convertMidiToVp(createDenseChordMidi(), {
+      simplifyChords: false,
+      maxChordSize: 5,
+      quantization: { slotsPerQuarter: 4 },
+    });
+
+    const slotZero = result.timeline.find((slot) => slot.slot === 0);
+    expect(slotZero).toBeDefined();
+    expect(slotZero!.notes.length).toBeGreaterThan(3);
+    expect(slotZero!.notes.length).toBeLessThanOrEqual(5);
+  });
+
+  it('Adept preset (simplifyChords=true, maxChordSize=4) allows up to 4 notes per chord', () => {
+    const result = convertMidiToVp(createDenseChordMidi(), {
+      simplifyChords: true,
+      maxChordSize: 4,
+      quantization: { slotsPerQuarter: 4 },
+    });
+
+    const slotZero = result.timeline.find((slot) => slot.slot === 0);
+    expect(slotZero).toBeDefined();
+    expect(slotZero!.notes.length).toBeGreaterThan(3);
+    expect(slotZero!.notes.length).toBeLessThanOrEqual(4);
+  });
 });

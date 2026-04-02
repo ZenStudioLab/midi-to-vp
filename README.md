@@ -191,10 +191,17 @@ Analyzes a notation string and returns difficulty metrics + recommended profile.
     qualitySignals: {
       totalRawNotes: number;
       inRangeNotes: number;
+      outputTotalNotes: number;
+      outputInRangeNotes: number;
       averageChordSize: number;
       peakChordSize: number;
-      notesPerSecond: number;
+      avgNotesPerSecond: number;
       timingJitter: number;
+      p95ChordSize: number;
+      hardChordRate: number;
+      p95NotesPerSecond: number;
+      maxNotesPerSecond: number;
+      gridConfidence: number;
     };
     vpRange: { minMidi: number; maxMidi: number };
   };
@@ -218,7 +225,7 @@ midi-to-vp <input.mid> [options]
 | `--max-chord-size <n>` | Max notes per chord | `3` |
 | `--include-percussion` | Keep MIDI channel 10 | `false` |
 | `--no-dedupe` | Disable duplicate removal | - |
-| `--no-chord-simplify` | Disable chord simplification | - |
+| `--no-chord-simplify` | Disable heuristic chord reduction; still respects `--max-chord-size` | - |
 | `--json-indent <n>` | JSON indentation width | `2` |
 | `--help` | Show help message | - |
 
@@ -228,8 +235,8 @@ midi-to-vp <input.mid> [options]
 # High-resolution quantization (16th notes)
 midi-to-vp song.mid --slots-per-quarter 16
 
-# Keep all chord notes
-midi-to-vp complex.mid --no-chord-simplify
+# Preserve dense chords up to 6 notes
+midi-to-vp complex.mid --no-chord-simplify --max-chord-size 6
 
 # Include percussion track
 midi-to-vp drums.mid --include-percussion
@@ -241,9 +248,15 @@ midi-to-vp tune.mid --mode standard --notation-out standard-sheet.txt
 ## Notation Formats
 
 ### Extended Notation
-Full note names with octave numbers:
+VP key tokens with dash placeholders for empty slots:
 ```
-C4 D4 E4 | F4 G4 A4 | [C4 E4 G4]
+[tu]y--d
+```
+
+### Standard Notation
+Compact VP key tokens without dash placeholders:
+```
+[tu]yd
 ```
 
 ## Player Difficulty Profiles

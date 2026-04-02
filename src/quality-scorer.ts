@@ -57,6 +57,20 @@ function createZeroStats(): QualityStats {
   };
 }
 
+function resolveScoredPopulation(input: QualitySignals) {
+  const hasOutputTotalNotes = input.outputTotalNotes !== undefined;
+  const hasOutputInRangeNotes = input.outputInRangeNotes !== undefined;
+
+  if (hasOutputTotalNotes !== hasOutputInRangeNotes) {
+    throw new RangeError('QualitySignals.outputTotalNotes and outputInRangeNotes must be provided together');
+  }
+
+  return {
+    totalNotes: input.outputTotalNotes ?? input.totalRawNotes,
+    inRangeNotes: input.outputInRangeNotes ?? input.inRangeNotes,
+  };
+}
+
 function validateSignals(input: QualitySignals): void {
   const entries = Object.entries(input) as Array<[keyof QualitySignals, number]>;
 
@@ -73,6 +87,14 @@ function validateSignals(input: QualitySignals): void {
   if (input.inRangeNotes > input.totalRawNotes) {
     throw new RangeError(
       `QualitySignals.inRangeNotes (${input.inRangeNotes}) must be <= totalRawNotes (${input.totalRawNotes})`,
+    );
+  }
+
+  const scoredPopulation = resolveScoredPopulation(input);
+
+  if (scoredPopulation.inRangeNotes > scoredPopulation.totalNotes) {
+    throw new RangeError(
+      `QualitySignals.outputInRangeNotes (${scoredPopulation.inRangeNotes}) must be <= outputTotalNotes (${scoredPopulation.totalNotes})`,
     );
   }
 
@@ -100,11 +122,12 @@ function validateSignals(input: QualitySignals): void {
 }
 
 function buildStats(input: QualitySignals): QualityStats {
-  const durationSeconds = input.avgNotesPerSecond > 0 ? input.totalRawNotes / input.avgNotesPerSecond : 0;
+  const scoredPopulation = resolveScoredPopulation(input);
+  const durationSeconds = input.avgNotesPerSecond > 0 ? scoredPopulation.totalNotes / input.avgNotesPerSecond : 0;
 
   return {
-    totalNotes: input.totalRawNotes,
-    inRangeNotes: input.inRangeNotes,
+    totalNotes: scoredPopulation.totalNotes,
+    inRangeNotes: scoredPopulation.inRangeNotes,
     averageChordSize: input.averageChordSize,
     peakChordSize: input.peakChordSize,
     p95ChordSize: input.p95ChordSize,
@@ -121,11 +144,13 @@ function buildStats(input: QualitySignals): QualityStats {
 export function normalizeSignals(input: QualitySignals): QualitySignalSet {
   validateSignals(input);
 
-  if (input.totalRawNotes === 0) {
+  const scoredPopulation = resolveScoredPopulation(input);
+
+  if (scoredPopulation.totalNotes === 0) {
     return createZeroSignalSet();
   }
 
-  const inRangeRatio = clamp01(input.inRangeNotes / input.totalRawNotes);
+  const inRangeRatio = clamp01(scoredPopulation.inRangeNotes / scoredPopulation.totalNotes);
 
   const avgPenalty = clamp01((input.averageChordSize - 1) / 4);
   const peakPenalty = clamp01((input.peakChordSize - 3) / 5);

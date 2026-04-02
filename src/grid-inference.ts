@@ -152,5 +152,7 @@ export function inferTempoGrid(onsets: number[], tempoSegments: TempoSegment[] =
   const tempoMapResult = inferFromTempoSegments(sortedOnsets, tempoSegments);
   const ioiResult = inferFromIoiHistogram(sortedOnsets);
 
-  return tempoMapResult.confidence >= ioiResult.confidence ? tempoMapResult : ioiResult;
+  return tempoMapResult.confidence > 0 && tempoMapResult.confidence >= ioiResult.confidence
+    ? tempoMapResult
+    : ioiResult;
 }

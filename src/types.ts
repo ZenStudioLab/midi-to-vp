@@ -62,6 +62,8 @@ export type ConversionOptions = {
 export type QualitySignals = {
   totalRawNotes: number;
   inRangeNotes: number;
+  outputTotalNotes?: number;
+  outputInRangeNotes?: number;
   averageChordSize: number;
   peakChordSize: number;
   avgNotesPerSecond: number;

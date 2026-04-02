@@ -23,7 +23,7 @@ Implement a **single-file CLI orchestration** (`src/cli.ts`) with a strict parse
 - Defaults:
   - `mode: 'extended'`
   - `slotsPerQuarter: 4`
-  - `maxChordSize: 4`
+  - `maxChordSize: 3`
   - `includePercussion: false`
   - `dedupe: true`
   - `simplifyChords: true`

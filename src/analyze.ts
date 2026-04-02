@@ -1,3 +1,4 @@
+import { createDefaultVpKeymap } from './keymap.js';
 import type { AnalysisResult, DifficultyLevel } from './types.js';
 
 type ParsedSlot = {
@@ -5,7 +6,8 @@ type ParsedSlot = {
   isRest: boolean;
 };
 
-const KEY_SEQUENCE = '1234567890qwertyuiopasdfghjklzxcvbnm';
+const VP_KEYMAP = createDefaultVpKeymap();
+const KEY_SEQUENCE = Object.keys(VP_KEYMAP.keyToMidi).sort((a, b) => VP_KEYMAP.keyToMidi[a] - VP_KEYMAP.keyToMidi[b]).join('');
 
 function clampScore(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
@@ -69,17 +71,8 @@ function parseNotation(notation: string): ParsedSlot[] {
 }
 
 function toKeyIndex(note: string): number {
-  const idx = KEY_SEQUENCE.indexOf(note.toLowerCase());
-  if (idx >= 0) {
-    return idx;
-  }
-
-  const code = note.charCodeAt(0);
-  if (code >= 33 && code <= 126) {
-    return code - 33;
-  }
-
-  return 0;
+  const idx = KEY_SEQUENCE.indexOf(note);
+  return idx >= 0 ? idx : -1;
 }
 
 export function analyzeVpNotation(notation: string): AnalysisResult {
@@ -120,7 +113,7 @@ export function analyzeVpNotation(notation: string): AnalysisResult {
   const rhythmicComplexity = clampScore((transitions / Math.max(1, slots.length - 1)) * 40 + (restSlots / slots.length) * 20);
 
   const allNotes = noteSlots.flatMap((slot) => slot.notes);
-  const indices = allNotes.map(toKeyIndex);
+  const indices = allNotes.map(toKeyIndex).filter((idx) => idx >= 0);
   const minIndex = indices.length > 0 ? Math.min(...indices) : 0;
   const maxIndex = indices.length > 0 ? Math.max(...indices) : 0;
   const span = maxIndex - minIndex;

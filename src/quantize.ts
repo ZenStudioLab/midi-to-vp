@@ -5,10 +5,8 @@ type TimelineOptions = {
   maxChordSize: number;
 };
 
-const HARD_MAX_CHORD_SIZE = 3;
-
 function simplifyChord(notes: QuantizedNoteEvent[], maxChordSize: number): QuantizedNoteEvent[] {
-  const allowedChordSize = Math.min(maxChordSize, HARD_MAX_CHORD_SIZE);
+  const allowedChordSize = maxChordSize;
 
   if (notes.length <= allowedChordSize) {
     return [...notes].sort((a, b) => a.midi - b.midi);
@@ -104,7 +102,7 @@ export function buildTimeline(quantized: QuantizedNoteEvent[], options: Timeline
     const unique = [...mergedByPitch.values()];
     const slotNotes = options.simplifyChords
       ? simplifyChord(unique, options.maxChordSize)
-      : simplifyChord(unique.sort((a, b) => a.midi - b.midi), HARD_MAX_CHORD_SIZE);
+      : simplifyChord(unique.sort((a, b) => a.midi - b.midi), options.maxChordSize);
 
     timeline.push({
       slot,

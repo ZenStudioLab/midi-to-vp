@@ -50,4 +50,22 @@ describe('notation analysis', () => {
 
     expect(denseAnalysis.overallScore).toBeGreaterThan(sparseAnalysis.overallScore);
   });
+
+  it('handles uppercase and shifted VP keys correctly', () => {
+    const result = analyzeVpNotation('[aSdf]');
+    expect(result.overallScore).toBeGreaterThan(0);
+    expect(result.chordComplexity).toBeGreaterThan(0);
+  });
+
+  it('excludes unknown tokens from range calculations without crashing', () => {
+    const withUnknown = analyzeVpNotation('[asd??f]');
+    const withoutUnknown = analyzeVpNotation('[asdf]');
+    expect(withUnknown.rangeScore).toBe(withoutUnknown.rangeScore);
+  });
+
+  it('returns valid metrics for mixed valid and invalid tokens', () => {
+    const result = analyzeVpNotation('[a1!]');
+    expect(result.noteDensity).toBeGreaterThan(0);
+    expect(result.overallScore).toBeGreaterThan(0);
+  });
 });
