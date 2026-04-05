@@ -1,5 +1,10 @@
-export type VpNotationMode = 'extended' | 'standard';
-export type DifficultyLevel = 'Novice' | 'Apprentice' | 'Adept' | 'Master' | 'Guru';
+export type VpNotationMode = "extended" | "standard";
+export type DifficultyLevel =
+  | "Novice"
+  | "Apprentice"
+  | "Adept"
+  | "Master"
+  | "Guru";
 
 export type TempoSegment = {
   ticks: number;
@@ -36,7 +41,7 @@ export type VpKeymap = {
   maxMidi: number;
 };
 
-export type VpKeymapBounds = Pick<VpKeymap, 'minMidi' | 'maxMidi'>;
+export type VpKeymapBounds = Pick<VpKeymap, "minMidi" | "maxMidi">;
 
 export type QuantizationOptions = {
   slotsPerQuarter?: number;
@@ -76,21 +81,26 @@ export type QualitySignals = {
 };
 
 export type ReasonCode =
-  | 'LOW_IN_RANGE_RATIO'
-  | 'FATAL_IN_RANGE_RATIO'
-  | 'HIGH_PEAK_CHORD_SIZE'
-  | 'FATAL_PEAK_CHORD_SIZE'
-  | 'HIGH_HARD_CHORD_RATE'
-  | 'FATAL_HARD_CHORD_RATE'
-  | 'HIGH_LOCAL_NOTE_DENSITY'
-  | 'FATAL_MAX_NOTE_DENSITY'
-  | 'LOW_TIMING_CONSISTENCY'
-  | 'FATAL_TIMING_CONSISTENCY'
-  | 'LOW_TEMPO_GRID_CONFIDENCE'
-  | 'INPUT_LIMIT_EXCEEDED_FILE_SIZE'
-  | 'INPUT_LIMIT_EXCEEDED_EVENT_COUNT'
-  | 'INPUT_LIMIT_EXCEEDED_DURATION'
-  | 'INPUT_LIMIT_EXCEEDED_TRACK_COUNT';
+  | "LOW_IN_RANGE_RATIO"
+  | "FATAL_IN_RANGE_RATIO"
+  | "HIGH_PEAK_CHORD_SIZE"
+  | "FATAL_PEAK_CHORD_SIZE"
+  | "HIGH_HARD_CHORD_RATE"
+  | "FATAL_HARD_CHORD_RATE"
+  | "HIGH_LOCAL_NOTE_DENSITY"
+  | "FATAL_MAX_NOTE_DENSITY"
+  | "LOW_TIMING_CONSISTENCY"
+  | "FATAL_TIMING_CONSISTENCY"
+  | "LOW_TEMPO_GRID_CONFIDENCE"
+  | "INPUT_LIMIT_EXCEEDED_FILE_SIZE"
+  | "INPUT_LIMIT_EXCEEDED_EVENT_COUNT"
+  | "INPUT_LIMIT_EXCEEDED_DURATION"
+  | "INPUT_LIMIT_EXCEEDED_TRACK_COUNT";
+
+export type ArtifactCapped = {
+  maxNotesPerSecond: boolean;
+  peakChordSize: boolean;
+};
 
 export type QualityStats = {
   totalNotes: number;
@@ -105,6 +115,7 @@ export type QualityStats = {
   timingJitter: number;
   gridConfidence: number;
   durationSeconds: number;
+  artifactCapped?: ArtifactCapped;
 };
 
 export type QualitySignalSet = {
@@ -151,7 +162,11 @@ export type ConversionResult = {
   };
 };
 
-export type ConversionFailureReason = 'corrupted_midi' | 'empty_midi' | 'percussion_only' | 'internal_error';
+export type ConversionFailureReason =
+  | "corrupted_midi"
+  | "empty_midi"
+  | "percussion_only"
+  | "internal_error";
 
 export type ConversionFailure = {
   ok: false;

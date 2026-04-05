@@ -1,5 +1,5 @@
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import {
   Alert,
   Box,
@@ -22,21 +22,32 @@ import {
   TextField,
   Typography,
   LinearProgress,
-  styled
-} from '@mui/material';
-import { analyzeVpNotation, convertMidiToVp, getDifficultyPreset, scoreConversionQuality } from '@zen/midi-to-vp/browser';
-import type { AnalysisResult, ConversionResult, DifficultyLevel, ScoringAssessment, VpNotationMode } from '@zen/midi-to-vp/browser';
-import { useState } from 'react';
+  styled,
+} from "@mui/material";
+import {
+  analyzeVpNotation,
+  convertMidiToVp,
+  getDifficultyPreset,
+  scoreConversionQuality,
+} from "@zen/midi-to-vp/browser";
+import type {
+  AnalysisResult,
+  ConversionResult,
+  DifficultyLevel,
+  ScoringAssessment,
+  VpNotationMode,
+} from "@zen/midi-to-vp/browser";
+import { useState } from "react";
 
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
+const VisuallyHiddenInput = styled("input")({
+  clip: "rect(0 0 0 0)",
+  clipPath: "inset(50%)",
   height: 1,
-  overflow: 'hidden',
-  position: 'absolute',
+  overflow: "hidden",
+  position: "absolute",
   bottom: 0,
   left: 0,
-  whiteSpace: 'nowrap',
+  whiteSpace: "nowrap",
   width: 1,
 });
 
@@ -72,10 +83,11 @@ function App() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
 
   const [scoring, setScoring] = useState<ScoringAssessment | null>(null);
-  const [difficultyLevel, setDifficultyLevel] = useState<DifficultyLevel>('Adept');
+  const [difficultyLevel, setDifficultyLevel] =
+    useState<DifficultyLevel>("Adept");
 
   // Conversion options
-  const [notationMode, setNotationMode] = useState<VpNotationMode>('extended');
+  const [notationMode, setNotationMode] = useState<VpNotationMode>("extended");
   const [slotsPerQuarter, setSlotsPerQuarter] = useState(4);
   const [includePercussion, setIncludePercussion] = useState(false);
   const [dedupe, setDedupe] = useState(true);
@@ -85,7 +97,7 @@ function App() {
   const applyDifficultyPreset = (level: DifficultyLevel) => {
     const preset = getDifficultyPreset(level);
     setDifficultyLevel(level);
-    setNotationMode(preset.notationMode ?? 'extended');
+    setNotationMode(preset.notationMode ?? "extended");
     setSlotsPerQuarter(preset.quantization?.slotsPerQuarter ?? 4);
     setDedupe(preset.dedupe ?? true);
     setSimplifyChords(preset.simplifyChords ?? true);
@@ -98,15 +110,15 @@ function App() {
       const buffer = await selectedFile.arrayBuffer();
       const uint8Array = new Uint8Array(buffer);
       const preview = convertMidiToVp(uint8Array, {
-        notationMode: 'standard',
-        quantization: { slotsPerQuarter: 4 }
+        notationMode: "standard",
+        quantization: { slotsPerQuarter: 4 },
       });
       const nextAnalysis = analyzeVpNotation(preview.notation.selected);
       setAnalysis(nextAnalysis);
       setScoring(scoreConversionQuality(preview.metadata.qualitySignals));
       applyDifficultyPreset(nextAnalysis.recommendedLevel);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Analysis failed');
+      setError(err instanceof Error ? err.message : "Analysis failed");
       setAnalysis(null);
       setScoring(null);
     } finally {
@@ -127,7 +139,7 @@ function App() {
 
   const handleConvert = async () => {
     if (!file) {
-      setError('Please select a MIDI file first');
+      setError("Please select a MIDI file first");
       return;
     }
 
@@ -149,11 +161,13 @@ function App() {
       });
 
       setAnalysis(analyzeVpNotation(conversionResult.notation.selected));
-      setScoring(scoreConversionQuality(conversionResult.metadata.qualitySignals));
+      setScoring(
+        scoreConversionQuality(conversionResult.metadata.qualitySignals),
+      );
       setResult(conversionResult);
       setTabValue(0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Conversion failed');
+      setError(err instanceof Error ? err.message : "Conversion failed");
       setScoring(null);
     } finally {
       setLoading(false);
@@ -164,12 +178,18 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-pink-50">
       <Container maxWidth="lg" className="py-8">
         <Box className="text-center mb-8">
-          <MusicNoteIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2 }} />
-          <Typography variant="h3" component="h1" gutterBottom className="font-bold">
+          <MusicNoteIcon sx={{ fontSize: 64, color: "primary.main", mb: 2 }} />
+          <Typography
+            variant="h3"
+            component="h1"
+            gutterBottom
+            className="font-bold"
+          >
             MIDI to Virtual Piano Converter
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            Convert MIDI files to Virtual Piano notation (Standard and Extended modes)
+            Convert MIDI files to Virtual Piano notation (Standard and Extended
+            modes)
           </Typography>
         </Box>
 
@@ -220,7 +240,9 @@ function App() {
                       data-testid="difficulty-level-select"
                       value={difficultyLevel}
                       label="Difficulty Profile"
-                      onChange={(e) => applyDifficultyPreset(e.target.value as DifficultyLevel)}
+                      onChange={(e) =>
+                        applyDifficultyPreset(e.target.value as DifficultyLevel)
+                      }
                     >
                       <MenuItem value="Novice">Novice</MenuItem>
                       <MenuItem value="Apprentice">Apprentice</MenuItem>
@@ -236,9 +258,13 @@ function App() {
                       data-testid="notation-mode-select"
                       value={notationMode}
                       label="Notation Mode"
-                      onChange={(e) => setNotationMode(e.target.value as VpNotationMode)}
+                      onChange={(e) =>
+                        setNotationMode(e.target.value as VpNotationMode)
+                      }
                     >
-                      <MenuItem value="extended">Extended (Full Range)</MenuItem>
+                      <MenuItem value="extended">
+                        Extended (Full Range)
+                      </MenuItem>
                       <MenuItem value="standard">Standard (Compact)</MenuItem>
                     </Select>
                   </FormControl>
@@ -248,7 +274,11 @@ function App() {
                     label="Slots Per Quarter Note"
                     value={slotsPerQuarter}
                     onChange={(e) => setSlotsPerQuarter(Number(e.target.value))}
-                    inputProps={{ min: 1, max: 16, 'data-testid': 'slots-per-quarter-input' }}
+                    inputProps={{
+                      min: 1,
+                      max: 16,
+                      "data-testid": "slots-per-quarter-input",
+                    }}
                     fullWidth
                   />
 
@@ -257,7 +287,11 @@ function App() {
                     label="Max Chord Size"
                     value={maxChordSize}
                     onChange={(e) => setMaxChordSize(Number(e.target.value))}
-                    inputProps={{ min: 1, max: 10, 'data-testid': 'max-chord-size-input' }}
+                    inputProps={{
+                      min: 1,
+                      max: 10,
+                      "data-testid": "max-chord-size-input",
+                    }}
                     fullWidth
                   />
                 </Box>
@@ -280,7 +314,7 @@ function App() {
                         data-testid="dedupe-switch"
                         checked={dedupe}
                         onChange={(e) => setDedupe(e.target.checked)}
-                        inputProps={{ 'data-testid': 'dedupe-switch-input' }}
+                        inputProps={{ "data-testid": "dedupe-switch-input" }}
                       />
                     }
                     label="Dedupe Notes"
@@ -312,7 +346,10 @@ function App() {
                       <Typography variant="body2" color="text.secondary">
                         Recommended Profile
                       </Typography>
-                      <Typography variant="h6" data-testid="analysis-recommended-level">
+                      <Typography
+                        variant="h6"
+                        data-testid="analysis-recommended-level"
+                      >
                         {analysis.recommendedLevel}
                       </Typography>
                     </Box>
@@ -320,7 +357,10 @@ function App() {
                       <Typography variant="body2" color="text.secondary">
                         Overall Score
                       </Typography>
-                      <Typography variant="h6" data-testid="analysis-overall-score">
+                      <Typography
+                        variant="h6"
+                        data-testid="analysis-overall-score"
+                      >
                         {analysis.overallScore}
                       </Typography>
                     </Box>
@@ -328,25 +368,37 @@ function App() {
                       <Typography variant="body2" color="text.secondary">
                         Note Density ({analysis.noteDensity})
                       </Typography>
-                      <LinearProgress variant="determinate" value={analysis.noteDensity} />
+                      <LinearProgress
+                        variant="determinate"
+                        value={analysis.noteDensity}
+                      />
                     </Box>
                     <Box>
                       <Typography variant="body2" color="text.secondary">
                         Chord Complexity ({analysis.chordComplexity})
                       </Typography>
-                      <LinearProgress variant="determinate" value={analysis.chordComplexity} />
+                      <LinearProgress
+                        variant="determinate"
+                        value={analysis.chordComplexity}
+                      />
                     </Box>
                     <Box>
                       <Typography variant="body2" color="text.secondary">
                         Rhythmic Complexity ({analysis.rhythmicComplexity})
                       </Typography>
-                      <LinearProgress variant="determinate" value={analysis.rhythmicComplexity} />
+                      <LinearProgress
+                        variant="determinate"
+                        value={analysis.rhythmicComplexity}
+                      />
                     </Box>
                     <Box>
                       <Typography variant="body2" color="text.secondary">
                         Range Score ({analysis.rangeScore})
                       </Typography>
-                      <LinearProgress variant="determinate" value={analysis.rangeScore} />
+                      <LinearProgress
+                        variant="determinate"
+                        value={analysis.rangeScore}
+                      />
                     </Box>
                   </Stack>
                 )}
@@ -373,10 +425,10 @@ function App() {
                       sx={{
                         color:
                           scoring.score >= 0.75
-                            ? 'success.main'
+                            ? "success.main"
                             : scoring.score >= 0.5
-                            ? 'warning.main'
-                            : 'error.main',
+                              ? "warning.main"
+                              : "error.main",
                       }}
                     >
                       {(scoring.score * 100).toFixed(1)}
@@ -386,13 +438,13 @@ function App() {
                       value={scoring.score * 100}
                       sx={{
                         mt: 0.5,
-                        '& .MuiLinearProgress-bar': {
+                        "& .MuiLinearProgress-bar": {
                           backgroundColor:
                             scoring.score >= 0.75
-                              ? 'success.main'
+                              ? "success.main"
                               : scoring.score >= 0.5
-                              ? 'warning.main'
-                              : 'error.main',
+                                ? "warning.main"
+                                : "error.main",
                         },
                       }}
                     />
@@ -400,26 +452,49 @@ function App() {
 
                   {/* Rubric version */}
                   <Box>
-                    <Chip label={`Rubric: ${scoring.rubricVersion}`} size="small" variant="outlined" />
+                    <Chip
+                      label={`Rubric: ${scoring.rubricVersion}`}
+                      size="small"
+                      variant="outlined"
+                    />
                   </Box>
 
                   {/* Signal progress bars */}
                   <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
                       Signals
                     </Typography>
                     <Stack spacing={1}>
                       {[
-                        { label: 'In-Range Ratio', value: scoring.signals.inRangeRatio },
-                        { label: 'Chord Complexity', value: scoring.signals.chordComplexity },
-                        { label: 'Note Density', value: scoring.signals.noteDensity },
-                        { label: 'Timing Consistency', value: scoring.signals.timingConsistency },
+                        {
+                          label: "In-Range Ratio",
+                          value: scoring.signals.inRangeRatio,
+                        },
+                        {
+                          label: "Chord Complexity",
+                          value: scoring.signals.chordComplexity,
+                        },
+                        {
+                          label: "Note Density",
+                          value: scoring.signals.noteDensity,
+                        },
+                        {
+                          label: "Timing Consistency",
+                          value: scoring.signals.timingConsistency,
+                        },
                       ].map(({ label, value }) => (
                         <Box key={label}>
                           <Typography variant="caption" color="text.secondary">
                             {label} ({(value * 100).toFixed(1)})
                           </Typography>
-                          <LinearProgress variant="determinate" value={value * 100} />
+                          <LinearProgress
+                            variant="determinate"
+                            value={value * 100}
+                          />
                         </Box>
                       ))}
                     </Stack>
@@ -428,19 +503,24 @@ function App() {
                   {/* Reason code chips */}
                   {scoring.reasons.length > 0 && (
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Reason Codes
                       </Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                         {scoring.reasons.map((code) => (
                           <Chip
                             key={code}
                             label={code}
                             size="small"
                             color={
-                              code.startsWith('FATAL_') || code.startsWith('INPUT_LIMIT_EXCEEDED_')
-                                ? 'error'
-                                : 'warning'
+                              code.startsWith("FATAL_") ||
+                              code.startsWith("INPUT_LIMIT_EXCEEDED_")
+                                ? "error"
+                                : "warning"
                             }
                           />
                         ))}
@@ -450,17 +530,70 @@ function App() {
 
                   {/* Stats summary */}
                   <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
                       Stats
                     </Typography>
                     <Box className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      <div><strong>Total Notes:</strong> {scoring.stats.totalNotes}</div>
-                      <div><strong>In-Range:</strong> {scoring.stats.inRangeNotes}</div>
-                      <div><strong>Peak Chord:</strong> {scoring.stats.peakChordSize}</div>
-                      <div><strong>Hard Chord Rate:</strong> {(scoring.stats.hardChordRate * 100).toFixed(1)}%</div>
-                      <div><strong>Max Notes/s:</strong> {scoring.stats.maxNotesPerSecond.toFixed(1)}</div>
-                      <div><strong>Duration:</strong> {scoring.stats.durationSeconds.toFixed(1)}s</div>
-                      <div><strong>Grid Confidence:</strong> {(scoring.stats.gridConfidence * 100).toFixed(1)}%</div>
+                      <div>
+                        <strong>Total Notes:</strong> {scoring.stats.totalNotes}
+                      </div>
+                      <div>
+                        <strong>In-Range:</strong> {scoring.stats.inRangeNotes}
+                      </div>
+                      <div>
+                        <strong>Peak Chord:</strong>{" "}
+                        {scoring.stats.peakChordSize}
+                      </div>
+                      <div>
+                        <strong>Hard Chord Rate:</strong>{" "}
+                        {(scoring.stats.hardChordRate * 100).toFixed(1)}%
+                      </div>
+                      <div>
+                        <strong>Max Notes/s:</strong>{" "}
+                        {scoring.stats.maxNotesPerSecond.toFixed(1)}
+                      </div>
+                      <div>
+                        <strong>Duration:</strong>{" "}
+                        {scoring.stats.durationSeconds.toFixed(1)}s
+                      </div>
+                      <div>
+                        <strong>Grid Confidence:</strong>{" "}
+                        {(scoring.stats.gridConfidence * 100).toFixed(1)}%
+                      </div>
+                    </Box>
+                    {/* Artifact cap debug chips */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 0.5,
+                        mt: 1,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Chip
+                        label={`artifactCapped.maxNotesPerSecond: ${scoring.stats.artifactCapped?.maxNotesPerSecond ?? false}`}
+                        size="small"
+                        variant="outlined"
+                        color={
+                          scoring.stats.artifactCapped?.maxNotesPerSecond
+                            ? "warning"
+                            : "default"
+                        }
+                      />
+                      <Chip
+                        label={`artifactCapped.peakChordSize: ${scoring.stats.artifactCapped?.peakChordSize ?? false}`}
+                        size="small"
+                        variant="outlined"
+                        color={
+                          scoring.stats.artifactCapped?.peakChordSize
+                            ? "warning"
+                            : "default"
+                        }
+                      />
                     </Box>
                   </Box>
                 </Stack>
@@ -477,12 +610,16 @@ function App() {
             disabled={loading}
             className="py-3"
           >
-            {loading ? 'Converting...' : 'Convert to Virtual Piano Notation'}
+            {loading ? "Converting..." : "Convert to Virtual Piano Notation"}
           </Button>
 
           {/* Error Display */}
           {error && (
-            <Alert data-testid="conversion-error" severity="error" onClose={() => setError(null)}>
+            <Alert
+              data-testid="conversion-error"
+              severity="error"
+              onClose={() => setError(null)}
+            >
               {error}
             </Alert>
           )}
@@ -497,7 +634,11 @@ function App() {
 
                 {/* Metadata Summary */}
                 <Paper variant="outlined" className="p-4 mb-4">
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     Metadata
                   </Typography>
                   <Box className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
@@ -508,17 +649,21 @@ function App() {
                       <strong>Total Slots:</strong> {result.metadata.totalSlots}
                     </div>
                     <div>
-                      <strong>Transpose:</strong> {result.transposeSemitones} semitones
+                      <strong>Transpose:</strong> {result.transposeSemitones}{" "}
+                      semitones
                     </div>
                     <div>
-                      <strong>Source Tracks:</strong> {result.metadata.sourceTrackCount}
+                      <strong>Source Tracks:</strong>{" "}
+                      {result.metadata.sourceTrackCount}
                     </div>
                     <div data-testid="result-profile-level">
                       <strong>Profile:</strong> {difficultyLevel}
                     </div>
                     {analysis && (
                       <div>
-                        <strong>Recommended:</strong> {analysis.recommendedLevel} ({analysis.confidence}% confidence)
+                        <strong>Recommended:</strong>{" "}
+                        {analysis.recommendedLevel} ({analysis.confidence}%
+                        confidence)
                       </div>
                     )}
                   </Box>
@@ -539,8 +684,11 @@ function App() {
                 )}
 
                 {/* Tabs for different outputs */}
-                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                  <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+                <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                  <Tabs
+                    value={tabValue}
+                    onChange={(_, newValue) => setTabValue(newValue)}
+                  >
                     <Tab label="Notation" />
                     <Tab label="Timeline" />
                     <Tab label="Raw JSON" />
@@ -553,7 +701,10 @@ function App() {
                       <Typography variant="subtitle2" gutterBottom>
                         Extended Notation
                       </Typography>
-                      <Paper variant="outlined" className="p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+                      <Paper
+                        variant="outlined"
+                        className="p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap"
+                      >
                         {result.notation.extended}
                       </Paper>
                     </Box>
@@ -561,7 +712,10 @@ function App() {
                       <Typography variant="subtitle2" gutterBottom>
                         Standard Notation
                       </Typography>
-                      <Paper variant="outlined" className="p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+                      <Paper
+                        variant="outlined"
+                        className="p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap"
+                      >
                         {result.notation.standard}
                       </Paper>
                     </Box>
@@ -569,7 +723,10 @@ function App() {
                       <Typography variant="subtitle2" gutterBottom>
                         Selected Mode
                       </Typography>
-                      <Paper variant="outlined" className="p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+                      <Paper
+                        variant="outlined"
+                        className="p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap"
+                      >
                         {result.notation.selected}
                       </Paper>
                     </Box>
@@ -580,10 +737,13 @@ function App() {
                   <Typography variant="subtitle2" gutterBottom>
                     Timeline ({result.timeline.length} slots)
                   </Typography>
-                  <Paper variant="outlined" className="p-4 max-h-96 overflow-y-auto">
+                  <Paper
+                    variant="outlined"
+                    className="p-4 max-h-96 overflow-y-auto"
+                  >
                     <pre className="text-xs">
                       {JSON.stringify(result.timeline.slice(0, 50), null, 2)}
-                      {result.timeline.length > 50 && '\n... (truncated)'}
+                      {result.timeline.length > 50 && "\n... (truncated)"}
                     </pre>
                   </Paper>
                 </TabPanel>
@@ -592,8 +752,13 @@ function App() {
                   <Typography variant="subtitle2" gutterBottom>
                     Full Conversion Result
                   </Typography>
-                  <Paper variant="outlined" className="p-4 max-h-96 overflow-y-auto">
-                    <pre className="text-xs">{JSON.stringify(result, null, 2)}</pre>
+                  <Paper
+                    variant="outlined"
+                    className="p-4 max-h-96 overflow-y-auto"
+                  >
+                    <pre className="text-xs">
+                      {JSON.stringify(result, null, 2)}
+                    </pre>
                   </Paper>
                 </TabPanel>
 
@@ -602,11 +767,13 @@ function App() {
                   <Button
                     variant="outlined"
                     onClick={() => {
-                      const blob = new Blob([result.notation.extended], { type: 'text/plain' });
+                      const blob = new Blob([result.notation.extended], {
+                        type: "text/plain",
+                      });
                       const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
+                      const a = document.createElement("a");
                       a.href = url;
-                      a.download = 'notation-extended.txt';
+                      a.download = "notation-extended.txt";
                       a.click();
                     }}
                   >
@@ -615,11 +782,13 @@ function App() {
                   <Button
                     variant="outlined"
                     onClick={() => {
-                      const blob = new Blob([result.notation.standard], { type: 'text/plain' });
+                      const blob = new Blob([result.notation.standard], {
+                        type: "text/plain",
+                      });
                       const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
+                      const a = document.createElement("a");
                       a.href = url;
-                      a.download = 'notation-standard.txt';
+                      a.download = "notation-standard.txt";
                       a.click();
                     }}
                   >
@@ -629,12 +798,12 @@ function App() {
                     variant="outlined"
                     onClick={() => {
                       const blob = new Blob([JSON.stringify(result, null, 2)], {
-                        type: 'application/json',
+                        type: "application/json",
                       });
                       const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
+                      const a = document.createElement("a");
                       a.href = url;
-                      a.download = 'conversion-result.json';
+                      a.download = "conversion-result.json";
                       a.click();
                     }}
                   >
