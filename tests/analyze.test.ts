@@ -2,6 +2,48 @@ import { describe, expect, it } from 'vitest';
 import { analyzeVpNotation, convertMidiToVp } from '../src/index';
 import { createDenseChordMidi, createMidiFixture } from './helpers/midi-fixture';
 
+const ANALYZE_SCENARIOS: Array<{
+  label: string;
+  notation: string;
+  rhythmicComplexity: number;
+}> = [
+  {
+    label: 'single note held 3 extra slots',
+    notation: 'C---',
+    rhythmicComplexity: 13,
+  },
+  {
+    label: 'note, two-slot rest, note',
+    notation: 'C - - D',
+    rhythmicComplexity: 37,
+  },
+  {
+    label: 'chord held then rest',
+    notation: '[CEG]-- -',
+    rhythmicComplexity: 32,
+  },
+  {
+    label: 'leading two-slot rest then note',
+    notation: '- - C',
+    rhythmicComplexity: 33,
+  },
+  {
+    label: 'leading two-slot rest then sustained chord',
+    notation: '- - [CEG]--',
+    rhythmicComplexity: 28,
+  },
+  {
+    label: 'final held note to timeline end',
+    notation: 'D----',
+    rhythmicComplexity: 10,
+  },
+  {
+    label: 'held note ending immediately into new onset, no gap',
+    notation: 'C---D',
+    rhythmicComplexity: 20,
+  },
+];
+
 describe('notation analysis', () => {
   it('returns zeroed metrics and Novice recommendation for empty notation', () => {
     const result = analyzeVpNotation('');
@@ -39,6 +81,22 @@ describe('notation analysis', () => {
     expect(result.overallScore).toBeLessThanOrEqual(100);
     expect(result.confidence).toBeGreaterThanOrEqual(0);
     expect(result.confidence).toBeLessThanOrEqual(100);
+  });
+
+  it('distinguishes sustain adjacency from spaced rests in rhythmic semantics', () => {
+    const sustained = analyzeVpNotation('C---D');
+    const spaced = analyzeVpNotation('C - - D');
+
+    expect(sustained.rhythmicComplexity).toBeLessThan(25);
+    expect(spaced.rhythmicComplexity).toBeGreaterThan(30);
+    expect(spaced.rhythmicComplexity).toBeGreaterThan(sustained.rhythmicComplexity);
+    expect(spaced.rhythmicComplexity).not.toBe(sustained.rhythmicComplexity);
+  });
+
+  it('preserves the seven Batch 3 sustain-vs-rest scenarios during analysis', () => {
+    ANALYZE_SCENARIOS.forEach(({ label, notation, rhythmicComplexity }) => {
+      expect(analyzeVpNotation(notation).rhythmicComplexity, label).toBe(rhythmicComplexity);
+    });
   });
 
   it('scores denser converted music higher than sparse music', () => {

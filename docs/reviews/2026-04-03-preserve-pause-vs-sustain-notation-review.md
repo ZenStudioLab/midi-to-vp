@@ -772,3 +772,85 @@ Semantic Contract point 3 rules cover four slot-transition cases: rest-at-positi
 ### Summary
 
 All seven R5 issues are fully and correctly resolved. Every fix was applied to the right location with the right formulation. The Semantic Contract and Step 4 are internally consistent, consistent with each other, and produce the correct character sequence for all seven golden examples when traced independently. The `- - [CEG]--` row traces cleanly with the space landing before `[`. Step 7 says "seven" explicitly. The guard placement issue (R5-I3) is correctly resolved across two functions. The plan is ready for implementation.
+
+---
+
+## Code Review Round 1 — 2026-04-05
+
+**Scope**: Batch 1 failing-contract tests in `tests/quantize-serialize.test.ts` and `tests/analyze.test.ts`
+**Build Status**: PASS
+
+### Issues
+
+#### Issue 1 (High): Sustain-tail test contains a chained `.every()` call that will crash once the first assertions pass
+**File**: `tests/quantize-serialize.test.ts:60`
+The new assertion uses `timeline.slice(1).every((slot) => slot.notes).every((notes) => notes.length === 0)`. The first `.every()` returns a boolean, so the second `.every()` attempts to call a non-existent method on a boolean and will throw a runtime `TypeError` as soon as the earlier length assertion stops failing. That means the test will stop representing the intended implementation gap once Batch 2 starts landing.
+**Fix**: Replace the chained call with a single array assertion, for example `expect(timeline.slice(1).every((slot) => slot.notes.length === 0)).toBe(true)` or an equivalent `map(...).every(...)` form.
+
+### Verdict: NEEDS_FIX
+
+---
+
+## Code Review Round 2 — 2026-04-05
+
+**Scope**: Batch 2 timeline-model changes in `src/types.ts`, `src/quantize.ts`, `src/convert.ts`, and supporting tests
+**Build Status**: PASS
+
+### Issues
+
+#### Issue 1 (High): `ConversionResult.quantizedNotes` now drops events via onset-slot flattening and chord simplification
+**File**: `src/convert.ts:293`
+`quantizedNotes` used to reflect the direct output of `quantizeNotes(...)`, which is the raw quantized event list before timeline-only onset filtering and chord simplification. The new assignment `timeline.flatMap((slot) => slot.slotType === "onset" ? slot.notes : [])` changes that public field into a flattened view of onset-slot notes after timeline processing. That can silently drop quantized events when chords are simplified or capped, which is outside the plan and changes the public API semantics beyond the intended `TimelineSlot` enrichment.
+**Fix**: Keep `ConversionResult.quantizedNotes` sourced from the direct `quantized` array returned by `quantizeNotes(...)`. The new `TimelineSlot` semantics belong on `timeline`, not on the raw quantized event output.
+
+### Verdict: NEEDS_FIX
+
+---
+
+## Code Review Round 3 — 2026-04-05
+
+**Scope**: Batch 3 serializer/analyzer behavior in `src/convert.ts`, `src/serialize.ts`, `src/analyze.ts`, and contract/regression tests
+**Build Status**: PASS
+
+### Issues
+
+#### Issue 1 (Medium): Step 7 asked for explicit serializer/parser round-trip coverage, but the scenario tests are still split across serializer-only and analyzer-only assertions
+**File**: `tests/quantize-serialize.test.ts`
+The seven labeled serializer scenarios are covered, and the analyzer scenarios are also covered, but there is still no single labeled test path that serializes a scenario and then proves the analyzer preserves the same intended boundary semantics from that serialized output. The current coverage is good, but it does not literally satisfy the "serializer/parser round-trip" wording from the plan.
+**Fix**: If you want full plan fidelity, add one compact round-trip assertion per labeled scenario or a table-driven helper that feeds each expected serialized string into `analyzeVpNotation(...)` and checks the scenario-specific semantic expectation.
+
+#### Issue 2 (Low): The stress test monitors slot/output size but not serialization-time budget explicitly
+**File**: `tests/quantize-serialize.test.ts`
+The long-sustain regression test usefully locks `totalSlots` and output length, but it does not yet record a time budget even though the plan called that out. This is not blocking, and a time-based assertion may be flaky if done aggressively.
+**Fix**: If retained, use a very generous timing threshold and keep it informational in CI; otherwise document in the review why slot-count monitoring is the safer regression guard.
+
+### Verdict: APPROVED
+
+---
+
+## Code Review Round 4 — 2026-04-05
+
+**Scope**: Batch 4a documentation updates in `docs/adr/0005-quantization-and-timeline-algorithm.md`, `docs/architecture.md`, `README.md`, historical plan notes, and `CHANGELOG.md`
+**Build Status**: PASS
+
+### Issues
+
+#### Issue 1 (High): ADR 0005 still documents an obsolete `zen` serialization mode inside the finalized sustain/rest contract
+**File**: `docs/adr/0005-quantization-and-timeline-algorithm.md:48`
+The ADR now correctly explains sustain-vs-rest behavior for extended notation, but the serialization-coupling section still says ``zen`` uses sustain-aware `-` and idle `|`. That conflicts with the current package API and with the updated architecture/README, which describe `standard` and `extended` as the active notation modes. Leaving the old line in the ADR undermines the point of making it the canonical contract document.
+**Fix**: Replace the obsolete `zen` bullet with wording that matches the current code and docs, for example: `standard: emits only onset note/chord tokens with no dash placeholders`.
+
+### Verdict: NEEDS_FIX
+
+---
+
+## Code Review Round 5 — 2026-04-05
+
+**Scope**: Final documentation alignment in `docs/adr/0005-quantization-and-timeline-algorithm.md` and repo PR-template merge gate in `.github/pull_request_template.md`
+**Build Status**: PASS
+
+### Issues
+
+No blocking issues found.
+
+### Verdict: APPROVED

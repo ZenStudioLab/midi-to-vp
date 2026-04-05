@@ -51,6 +51,10 @@ export function quantizeNotes(
   const deduped = new Map<string, QuantizedNoteEvent>();
 
   for (const note of notes) {
+    if (note.durationSec <= 0) {
+      continue;
+    }
+
     const vpKey = keymap.midiToKey[note.midi];
     if (!vpKey) {
       continue;
@@ -95,25 +99,38 @@ export function buildTimeline(
   quantized: QuantizedNoteEvent[],
   options: TimelineOptions,
 ): TimelineSlot[] {
+  if (quantized.length === 0) {
+    return [];
+  }
+
   const bySlot = new Map<number, QuantizedNoteEvent[]>();
-  let maxSlot = 0;
+  let maxEndSlotExclusive = 0;
 
   for (const note of quantized) {
     const list = bySlot.get(note.startSlot) ?? [];
     list.push(note);
     bySlot.set(note.startSlot, list);
-    if (note.startSlot > maxSlot) {
-      maxSlot = note.startSlot;
+    if (note.endSlot > maxEndSlotExclusive) {
+      maxEndSlotExclusive = note.endSlot;
+    }
+  }
+
+  // Pre-compute active note counts per slot using boundary sweep (O(n))
+  // This avoids O(n*m) per-slot reduce in the loop below
+  const slotActiveCounts = new Map<number, number>();
+  for (const note of quantized) {
+    for (let s = note.startSlot; s < note.endSlot; s++) {
+      slotActiveCounts.set(s, (slotActiveCounts.get(s) ?? 0) + 1);
     }
   }
 
   const timeline: TimelineSlot[] = [];
 
-  for (let slot = 0; slot <= maxSlot; slot += 1) {
-    const notes = bySlot.get(slot) ?? [];
+  for (let slot = 0; slot < maxEndSlotExclusive; slot += 1) {
+    const onsetNotes = bySlot.get(slot) ?? [];
 
     const mergedByPitch = new Map<number, QuantizedNoteEvent>();
-    for (const note of notes) {
+    for (const note of onsetNotes) {
       const existing = mergedByPitch.get(note.midi);
       if (!existing || note.velocity > existing.velocity) {
         mergedByPitch.set(note.midi, note);
@@ -124,9 +141,14 @@ export function buildTimeline(
     const slotNotes = options.simplifyChords
       ? simplifyChord(unique, options.maxChordSize)
       : unique.sort((a, b) => a.midi - b.midi).slice(0, options.maxChordSize);
+    const activeNoteCount = slotActiveCounts.get(slot) ?? 0;
+    const slotType =
+      slotNotes.length > 0 ? "onset" : activeNoteCount > 0 ? "sustain" : "rest";
 
     timeline.push({
       slot,
+      slotType,
+      activeNoteCount,
       notes: slotNotes,
     });
   }

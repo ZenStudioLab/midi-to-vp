@@ -4,7 +4,7 @@
 
 ## Features
 
-- 🎹 **Two Notation Modes**: Standard (compact) and Extended (dash-aware)
+- 🎹 **Two Notation Modes**: Standard (compact) and Extended (sustain/rest-aware)
 - 🧭 **Player Difficulty Profiles**: Built-in presets for `Novice`, `Apprentice`, `Adept`, `Master`, `Guru`
 - 📊 **Sheet Analysis**: Analyze notation and get difficulty recommendations
 - 🎼 **Smart Conversion**: Automatic transpose, quantization, and chord simplification
@@ -172,7 +172,7 @@ Analyzes a notation string and returns difficulty metrics + recommended profile.
   normalizedNotes: NoteEvent[];             // Raw MIDI notes
   transformedNotes: NoteEvent[];            // After transpose/filter
   quantizedNotes: QuantizedNoteEvent[];     // Quantized to timeline
-  timeline: TimelineSlot[];                 // Grouped by time slots
+  timeline: TimelineSlot[];                 // Grouped by time slots with explicit onset/sustain/rest semantics
   transposeSemitones: number;               // Auto-transpose offset
   warnings: string[];                       // Conversion warnings
   notation: {
@@ -207,6 +207,19 @@ Analyzes a notation string and returns difficulty metrics + recommended profile.
   };
 }
 ```
+
+### TimelineSlot
+
+```typescript
+{
+  slot: number;
+  slotType: 'onset' | 'sustain' | 'rest';
+  activeNoteCount: number;
+  notes: QuantizedNoteEvent[];
+}
+```
+
+`notes` is populated only for onset slots. Sustain and rest slots stay explicit through `slotType` plus `activeNoteCount`.
 
 ## CLI Reference
 
@@ -248,10 +261,14 @@ midi-to-vp tune.mid --mode standard --notation-out standard-sheet.txt
 ## Notation Formats
 
 ### Extended Notation
-VP key tokens with dash placeholders for empty slots:
+VP key tokens with explicit sustain and rest boundaries:
 ```
-[tu]y--d
+C---D
+C - - D
+[CEG]-- -
 ```
+
+Adjacent dashes continue the preceding note or chord sustain. Space-separated dash groups indicate true rest or pause slots. This supersedes older wording that described all empty slots as `-`.
 
 ### Standard Notation
 Compact VP key tokens without dash placeholders:

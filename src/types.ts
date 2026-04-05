@@ -29,8 +29,12 @@ export type QuantizedNoteEvent = NoteEvent & {
   vpKey: string;
 };
 
+export type TimelineSlotType = "onset" | "sustain" | "rest";
+
 export type TimelineSlot = {
   slot: number;
+  slotType: TimelineSlotType;
+  activeNoteCount: number;
   notes: QuantizedNoteEvent[];
 };
 

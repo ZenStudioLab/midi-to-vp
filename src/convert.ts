@@ -290,7 +290,6 @@ function runConversion(
     maxChordSize,
   });
 
-  const quantizedNotes = timeline.flatMap((slot) => slot.notes);
   const qualitySignals = computeQualitySignals(
     rawNotes,
     transformed.notes,
@@ -315,7 +314,7 @@ function runConversion(
   return {
     normalizedNotes,
     transformedNotes: transformed.notes,
-    quantizedNotes,
+    quantizedNotes: quantized,
     timeline,
     transposeSemitones: transformed.transposeSemitones,
     warnings,

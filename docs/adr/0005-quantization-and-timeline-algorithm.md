@@ -30,7 +30,11 @@ In `quantize.ts`:
 ### Timeline Construction Rules
 
 In `buildTimeline`:
-- Build slots from `0` to `max(startSlot)` inclusive
+- Build slots from `0` to the true final active slot (`max(endSlot) - 1`) so sustain tails are preserved
+- Emit explicit `TimelineSlot` semantics for every slot:
+  - `slotType: "onset" | "sustain" | "rest"`
+  - `activeNoteCount` for total active voices in the slot
+  - `notes` populated only for onset slots
 - Merge same-pitch notes per slot by keeping the highest velocity note
 - If `simplifyChords` is enabled, apply `maxChordSize` policy:
   - Keep melody only when `maxChordSize <= 1`
@@ -40,8 +44,10 @@ In `buildTimeline`:
 ### Serialization Coupling
 
 Serialized output keeps timeline slot count intact. Rendering differs by notation mode:
-- `extended`: rests rendered as `-`
-- `zen`: uses sustain-aware `-` and idle `|`
+- `extended`: adjacent `-` characters extend sustain, while space-separated `-` groups represent rest or pause slots
+- `standard`: emits only onset note/chord tokens with no dash placeholders
+
+This supersedes earlier shorthand that treated all empty slots as `-` without preserving the sustain versus rest boundary.
 
 ## Consequences
 
@@ -54,7 +60,7 @@ Serialized output keeps timeline slot count intact. Rendering differs by notatio
 ### Negative
 - Rounding can shift events near boundaries by half-step tolerance
 - Very dense polyphony is intentionally reduced in simplified modes
-- Timeline currently ignores trailing sustain-only tail slots after final start slot
+- Extended-notation consumers must preserve whitespace when parsing sustain versus rest boundaries
 
 ### Neutral
 - Algorithmic complexity remains O(n log n) because of sorting

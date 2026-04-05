@@ -49,20 +49,91 @@ function formatTokens(tokens: string[], format?: FormattingOptions | null): stri
   return parts.join('').trimEnd();
 }
 
-export function serializeVpTimeline(timeline: TimelineSlot[], options: SerializeOptions): string {
-  const tokens: string[] = [];
+function getFormatBoundary(
+  slotNumber: number,
+  format?: FormattingOptions | null,
+): string {
+  if (!format) {
+    return '';
+  }
 
-  if (options.mode === 'extended') {
-    // Extended mode: includes timing markers (-) for empty slots
-    for (const slot of timeline) {
-      tokens.push(slot.notes.length > 0 ? renderSlotToken(slot.notes) : '-');
+  const groupSlots = format.groupSlots ?? 0;
+  const lineBreakEveryGroups = format.lineBreakEveryGroups ?? 0;
+
+  if (groupSlots <= 0) {
+    return '';
+  }
+
+  if (
+    lineBreakEveryGroups > 0 &&
+    slotNumber % (groupSlots * lineBreakEveryGroups) === 0
+  ) {
+    return '\n';
+  }
+
+  if (slotNumber % groupSlots === 0) {
+    return ' ';
+  }
+
+  return '';
+}
+
+function getExtendedBoundary(
+  previousSlot: TimelineSlot | undefined,
+  currentSlot: TimelineSlot,
+): string {
+  if (!previousSlot) {
+    return '';
+  }
+
+  if (currentSlot.slotType === 'sustain') {
+    return '';
+  }
+
+  if (currentSlot.slotType === 'rest') {
+    return ' ';
+  }
+
+  return previousSlot.slotType === 'rest' ? ' ' : '';
+}
+
+function serializeExtendedTimeline(
+  timeline: TimelineSlot[],
+  format?: FormattingOptions | null,
+): string {
+  let output = '';
+
+  timeline.forEach((slot, index) => {
+    const previousSlot = index > 0 ? timeline[index - 1] : undefined;
+    if (index > 0) {
+      const formatBoundary = getFormatBoundary(index, format);
+      output += formatBoundary || getExtendedBoundary(previousSlot, slot);
     }
 
-    return formatTokens(tokens, options.format);
+    if (slot.slotType === 'onset') {
+      output += renderSlotToken(slot.notes);
+      return;
+    }
+
+    output += '-';
+  });
+
+  return output.trimEnd();
+}
+
+export function serializeVpTimeline(timeline: TimelineSlot[], options: SerializeOptions): string {
+  if (options.mode === 'extended') {
+    return serializeExtendedTimeline(timeline, options.format);
   }
+
+  const tokens: string[] = [];
 
   // Standard mode: only includes notes, no timing markers
   for (const slot of timeline) {
+    if (slot.slotType !== 'onset') {
+      continue;
+    }
+
     if (slot.notes.length > 0) {
       tokens.push(renderSlotToken(slot.notes));
     }

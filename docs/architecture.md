@@ -1,7 +1,7 @@
 # @zen/midi-to-vp Architecture
 
 **Version**: 0.1.0  
-**Last Updated**: 2026-03-14  
+**Last Updated**: 2026-04-05  
 **Status**: Production-ready
 
 ## Overview
@@ -62,12 +62,20 @@ QuantizedNoteEvent[] → TimelineSlot[] → string (notation)
 **Key Types** (see `types.ts`):
 - `NoteEvent`: MIDI note with absolute time (seconds)
 - `QuantizedNoteEvent`: Extends `NoteEvent` with `startSlot`, `vpKey`
-- `TimelineSlot`: `{ slot: number, notes: QuantizedNoteEvent[] }`
+- `TimelineSlotType`: `onset | sustain | rest`
+- `TimelineSlot`: `{ slot: number, slotType: TimelineSlotType, activeNoteCount: number, notes: QuantizedNoteEvent[] }`
 - `ConversionResult`: Full output with intermediate arrays, notation, metadata, warnings
+
+`TimelineSlot` semantics:
+- `onset`: one or more new notes begin in this slot; `notes` is non-empty
+- `sustain`: no new onset, but one or more prior notes remain active; `notes` is empty and `activeNoteCount > 0`
+- `rest`: no active notes; `notes` is empty and `activeNoteCount === 0`
 
 **Notation Modes**:
 - **Standard**: VP key output without dash placeholders
-- **Extended**: VP key output with `-` for empty timeline slots
+- **Extended**: VP key output where adjacent `-` characters mean sustain continuation and space-separated `-` groups mean rest or pause
+
+This replaces older shorthand such as "all empty slots are `-`". Extended-notation parsers must preserve whitespace boundaries.
 
 **Player Difficulty Profiles** (built-in API contract):
 - **Novice**: standard notation, lowest density

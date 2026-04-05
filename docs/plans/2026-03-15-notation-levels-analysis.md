@@ -12,7 +12,9 @@
 - `src/serialize.ts` uses "zen" terminology for compact notation
 - Only two modes exist: "zen" (compact) and "extended" (note names with octaves)
 - No formal "Standard" 61-key mode
-- Dash character (`-`) in extended mode represents empty time slots
+- Historical assumption: dash character (`-`) in extended mode represents empty time slots
+
+Superseded note: the finalized contract is documented in `docs/plans/active/2026-04-03-preserve-pause-vs-sustain-notation.md`. Extended notation now uses adjacent dashes for sustain continuation and space-separated dash groups for rest or pause.
 
 ### Target Architecture
 
@@ -35,8 +37,8 @@
    - Range: 61 keys (5 octaves, standard piano range)
    - Use: Standard notation with rhythmic gaps/sustains
    - **Dash behavior**:
-     - After note: `a-` extends previous note duration
-     - Standalone: `a - d` creates empty beat between notes
+   - After note: `a-` extends previous note duration through sustain continuation
+   - Standalone: `a - d` creates a real rest or pause between notes
 
 ### Implementation Tasks
 
@@ -94,8 +96,10 @@
 - **Standalone**: `a - d` represents empty beat (rest/gap)
 - **Minimal/Standard modes**: No dash character support (parser should warn/ignore)
 
+Superseded wording: this section originally framed all empty slots as dash placeholders. The finalized sustain/rest split now treats adjacent dashes as sustain and spaced dash groups as rests.
+
 **Risk**: Confusion between sustain and empty slot semantics  
-**Mitigation**: Clear documentation. Extended mode uses `-` ONLY for empty slots, never sustain.
+**Mitigation**: Clear documentation. Extended mode uses adjacent `-` for sustain continuation and spaced `-` groups for rests.
 
 ---
 

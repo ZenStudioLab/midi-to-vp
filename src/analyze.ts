@@ -3,7 +3,7 @@ import type { AnalysisResult, DifficultyLevel } from './types.js';
 
 type ParsedSlot = {
   notes: string[];
-  isRest: boolean;
+  slotType: 'onset' | 'sustain' | 'rest';
 };
 
 const VP_KEYMAP = createDefaultVpKeymap();
@@ -30,40 +30,101 @@ function mapScoreToLevel(score: number): DifficultyLevel {
   return 'Guru';
 }
 
+function consumeWhitespace(notation: string, startIndex: number): number {
+  let index = startIndex;
+  while (index < notation.length && /\s/.test(notation[index] ?? '')) {
+    index += 1;
+  }
+
+  return index;
+}
+
+function parseChordToken(notation: string, startIndex: number): { notes: string[]; nextIndex: number } | null {
+  if (notation[startIndex] !== '[') {
+    return null;
+  }
+
+  const closeIndex = notation.indexOf(']', startIndex + 1);
+  if (closeIndex === -1) {
+    return null;
+  }
+
+  return {
+    notes: notation
+      .slice(startIndex + 1, closeIndex)
+      .split('')
+      .filter((token) => token.length > 0),
+    nextIndex: closeIndex + 1,
+  };
+}
+
+function parseDashRun(
+  notation: string,
+  startIndex: number,
+  precededByWhitespace: boolean,
+  previousSlot: ParsedSlot | undefined,
+): { slots: ParsedSlot[]; nextIndex: number } {
+  let index = startIndex;
+  while (notation[index] === '-') {
+    index += 1;
+  }
+
+  const runLength = index - startIndex;
+  const isSustainRun = !precededByWhitespace &&
+    previousSlot !== undefined &&
+    previousSlot.slotType !== 'rest';
+  const slotType = isSustainRun ? 'sustain' : 'rest';
+
+  return {
+    slots: Array.from({ length: runLength }, () => ({ notes: [], slotType })),
+    nextIndex: index,
+  };
+}
+
 function parseNotation(notation: string): ParsedSlot[] {
-  const cleaned = notation.replace(/\s+/g, '').trim();
-  if (!cleaned) {
+  const trimmed = notation.trim();
+  if (!trimmed) {
     return [];
   }
 
   const slots: ParsedSlot[] = [];
   let index = 0;
 
-  while (index < cleaned.length) {
-    const char = cleaned[index];
+  while (index < notation.length) {
+    const nextIndex = consumeWhitespace(notation, index);
+    const precededByWhitespace = nextIndex > index;
+    index = nextIndex;
+
+    if (index >= notation.length) {
+      break;
+    }
+
+    const char = notation[index];
 
     if (char === '-') {
-      slots.push({ notes: [], isRest: true });
-      index += 1;
+      const dashRun = parseDashRun(
+        notation,
+        index,
+        precededByWhitespace,
+        slots[slots.length - 1],
+      );
+      slots.push(...dashRun.slots);
+      index = dashRun.nextIndex;
       continue;
     }
 
     if (char === '[') {
-      const close = cleaned.indexOf(']', index + 1);
-      if (close === -1) {
+      const chord = parseChordToken(notation, index);
+      if (!chord) {
         break;
       }
 
-      const notes = cleaned
-        .slice(index + 1, close)
-        .split('')
-        .filter((token) => token.length > 0);
-      slots.push({ notes, isRest: false });
-      index = close + 1;
+      slots.push({ notes: chord.notes, slotType: 'onset' });
+      index = chord.nextIndex;
       continue;
     }
 
-    slots.push({ notes: [char], isRest: false });
+    slots.push({ notes: [char], slotType: 'onset' });
     index += 1;
   }
 
@@ -90,7 +151,7 @@ export function analyzeVpNotation(notation: string): AnalysisResult {
   }
 
   const noteSlots = slots.filter((slot) => slot.notes.length > 0);
-  const restSlots = slots.length - noteSlots.length;
+  const restSlots = slots.filter((slot) => slot.slotType === 'rest').length;
   const totalNotes = noteSlots.reduce((sum, slot) => sum + slot.notes.length, 0);
   const notesPerSlot = noteSlots.length === 0 ? 0 : totalNotes / slots.length;
   const noteDensity = clampScore(((totalNotes / Math.max(16, slots.length)) * 100) * 0.6 + (notesPerSlot / 4) * 40);
@@ -104,8 +165,8 @@ export function analyzeVpNotation(notation: string): AnalysisResult {
   for (let i = 1; i < slots.length; i += 1) {
     const prev = slots[i - 1];
     const current = slots[i];
-    const prevToken = prev.isRest ? '-' : prev.notes.join('');
-    const currentToken = current.isRest ? '-' : current.notes.join('');
+    const prevToken = prev.slotType === 'onset' ? prev.notes.join('') : prev.slotType;
+    const currentToken = current.slotType === 'onset' ? current.notes.join('') : current.slotType;
     if (prevToken !== currentToken) {
       transitions += 1;
     }
