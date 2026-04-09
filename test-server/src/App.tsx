@@ -16,6 +16,11 @@ import {
   Paper,
   Select,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
   Switch,
   Tab,
   Tabs,
@@ -274,10 +279,10 @@ function App() {
                     label="Slots Per Quarter Note"
                     value={slotsPerQuarter}
                     onChange={(e) => setSlotsPerQuarter(Number(e.target.value))}
+                    data-testid="slots-per-quarter-input"
                     inputProps={{
                       min: 1,
                       max: 16,
-                      "data-testid": "slots-per-quarter-input",
                     }}
                     fullWidth
                   />
@@ -287,10 +292,10 @@ function App() {
                     label="Max Chord Size"
                     value={maxChordSize}
                     onChange={(e) => setMaxChordSize(Number(e.target.value))}
+                    data-testid="max-chord-size-input"
                     inputProps={{
                       min: 1,
                       max: 10,
-                      "data-testid": "max-chord-size-input",
                     }}
                     fullWidth
                   />
@@ -314,7 +319,6 @@ function App() {
                         data-testid="dedupe-switch"
                         checked={dedupe}
                         onChange={(e) => setDedupe(e.target.checked)}
-                        inputProps={{ "data-testid": "dedupe-switch-input" }}
                       />
                     }
                     label="Dedupe Notes"
@@ -411,7 +415,7 @@ function App() {
             <Card elevation={3} data-testid="quality-score-panel">
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Conversion Quality
+                  Quality Scorer
                 </Typography>
                 <Stack spacing={2}>
                   {/* Score badge */}
@@ -537,34 +541,40 @@ function App() {
                     >
                       Stats
                     </Typography>
-                    <Box className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      <div>
-                        <strong>Total Notes:</strong> {scoring.stats.totalNotes}
-                      </div>
-                      <div>
-                        <strong>In-Range:</strong> {scoring.stats.inRangeNotes}
-                      </div>
-                      <div>
-                        <strong>Peak Chord:</strong>{" "}
-                        {scoring.stats.peakChordSize}
-                      </div>
-                      <div>
-                        <strong>Hard Chord Rate:</strong>{" "}
-                        {(scoring.stats.hardChordRate * 100).toFixed(1)}%
-                      </div>
-                      <div>
-                        <strong>Max Notes/s:</strong>{" "}
-                        {scoring.stats.maxNotesPerSecond.toFixed(1)}
-                      </div>
-                      <div>
-                        <strong>Duration:</strong>{" "}
-                        {scoring.stats.durationSeconds.toFixed(1)}s
-                      </div>
-                      <div>
-                        <strong>Grid Confidence:</strong>{" "}
-                        {(scoring.stats.gridConfidence * 100).toFixed(1)}%
-                      </div>
-                    </Box>
+                    <TableContainer component={Paper} variant="outlined">
+                      <Table size="small" aria-label="quality scorer stats">
+                        <TableBody>
+                          <TableRow>
+                            <TableCell component="th" scope="row">Total Notes</TableCell>
+                            <TableCell>{scoring.stats.totalNotes}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell component="th" scope="row">In-Range</TableCell>
+                            <TableCell>{scoring.stats.inRangeNotes}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell component="th" scope="row">Peak Chord</TableCell>
+                            <TableCell>{scoring.stats.peakChordSize}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell component="th" scope="row">Hard Chord Rate</TableCell>
+                            <TableCell>{(scoring.stats.hardChordRate * 100).toFixed(1)}%</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell component="th" scope="row">Max Notes/s</TableCell>
+                            <TableCell>{scoring.stats.maxNotesPerSecond.toFixed(1)}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell component="th" scope="row">Duration</TableCell>
+                            <TableCell>{scoring.stats.durationSeconds.toFixed(1)}s</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell component="th" scope="row">Grid Confidence</TableCell>
+                            <TableCell>{(scoring.stats.gridConfidence * 100).toFixed(1)}%</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
                     {/* Artifact cap debug chips */}
                     <Box
                       sx={{
